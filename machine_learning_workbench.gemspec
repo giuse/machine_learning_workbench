@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "nmatrix-atlas", "~> 0.2"
+
   spec.add_development_dependency "bundler", "~> 1.16"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
@@ -27,4 +29,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "pry-nav", "~> 0.2"
   spec.add_development_dependency "pry-rescue", "~> 1.4"
   spec.add_development_dependency "pry-stack_explorer", "~> 0.4"
+
+  # currently under trial
+  spec.add_development_dependency "rmagick"
+  spec.add_development_dependency "parallel"
 end
