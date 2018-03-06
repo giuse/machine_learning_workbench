@@ -2,6 +2,7 @@
 RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies do
   NES = MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   ndims = 5          # XNES and SNES
+  ndims_lst = [3,2]  # BDNES
   obj_fns = {
     # MINIMIZATION: upper parabolic with minimum in [0]*ndims
     min: -> (inds) { inds.map { |ind| ind.inject(0) { |mem,var| mem + var**2 } } },
@@ -105,5 +106,31 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
     end
   end
 
+  describe NES::BDNES do
+    describe "full run" do
+      opt_type = opt_types.sample # try either :)
+      nes = NES::BDNES.new [3,2], obj_fns[opt_type], opt_type, rseed: 1
+      ntimes = 1000
+      context "within #{ntimes} iterations" do
+        it "optimizes the negative squares function" do
+          ntimes.times { nes.train }
+          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.convergence.approximates? 0).to be_truthy
+        end
+      end
+    end
+
+    describe "resuming" do
+      it "#dump and #load" do
+        a = NES::BDNES.new ndims_lst, obj_fns[one_opt_type], one_opt_type, rseed: 1
+        3.times { a.train }
+        a_dump = a.save
+        b = NES::BDNES.new ndims_lst, obj_fns[one_opt_type], one_opt_type, rseed: 2
+        b.load a_dump
+        b_dump = b.save
+        expect(a_dump).to eq(b_dump)
+      end
+    end
+  end
 
 end
