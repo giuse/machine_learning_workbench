@@ -24,13 +24,22 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+TLDR: Check out [the `examples` directory](examples), e.g. [this script](examples/neuroevolution.rb).
+
+This library is thought as a practical workbench: there is plenty of tools hanging, each has multiple uses and applications, and as such it is built as atomic and flexible as possible. Folders [in the lib structure](lib/machine_learning_workbench) categorize them them.
+
+The [systems directory](lib/machine_learning_workbench/systems) holds few examples of how to bring them together in higher abstractions, i.e. as _compound tools_.
+For example, a [neuroevolution setup](lib/machine_learning_workbench/systems/neuroevolution.rb) brings together evolutionary computation and neural networks.
+
+For an example of how to build it from scratch, check this [neuroevolution script](examples/neuroevolution.rb). To run it, use `bundle exec ruby examples/neuroevolution.rb`
+
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After cloning the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+
 
 ## Contributing
 
