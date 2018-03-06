@@ -1,4 +1,8 @@
-# Machine Learning Workbench
+# [Machine Learning Workbench](https://github.com/giuse/machine_learning_workbench)
+
+[![Gem Version](https://badge.fury.io/rb/machine_learning_workbench.svg)](https://badge.fury.io/rb/machine_learning_workbench)
+[![Build Status](https://travis-ci.org/giuse/machine_learning_workbench.svg?branch=master)](https://travis-ci.org/giuse/machine_learning_workbench)
+[![Code Climate](https://codeclimate.com/github/giuse/machine_learning_workbench/badges/gpa.svg)](https://codeclimate.com/github/giuse/machine_learning_workbench)
 
 This workbench holds a collection of machine learning methods in Ruby. Rather than specializing on a single task or method, this gem aims at providing an encompassing framework for any machine learning application.
 
