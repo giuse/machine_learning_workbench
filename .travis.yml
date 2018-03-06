@@ -2,4 +2,8 @@ sudo: false
 language: ruby
 rvm:
   - 2.4.2
+addons:
+  apt:
+    packages:
+    - libatlas-base-dev
 before_install: gem install bundler -v 1.16.0

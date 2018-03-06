@@ -3,6 +3,9 @@ set -euo pipefail
 IFS=$'\n\t'
 set -vx
 
+# ubuntu:
+sudo apt install libatlas-base-dev # for nmatrix
+
 bundle install
 
 # Do any other automated setup that you need to do here

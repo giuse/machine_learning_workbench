@@ -123,7 +123,7 @@ module MachineLearningWorkbench::NeuralNetwork
     # @return [true] always true. If something's wrong it simply fails, and if
     #   all goes well there's nothing to return but a confirmation to the caller.
     def load_weights weights
-      raise "Hell!" unless weights.size == nweights
+      raise ArgumentError unless weights.size == nweights
       weights_iter = weights.each
       @layers = layer_shapes.collect do |shape|
         NMatrix.new(shape, dtype: :float64) { weights_iter.next }
@@ -144,8 +144,8 @@ module MachineLearningWorkbench::NeuralNetwork
     # @param input [Array<Float>] the given input
     # @return [Array] the activation of the output layer
     def activate input
-      raise "Hell!" unless input.size == struct.first
-      raise "Hell!" unless input.is_a? Array
+      raise ArgumentError unless input.size == struct.first
+      raise ArgumentError unless input.is_a? Array
       # load input in first state
       @state[0][0, 0..-2] = input
       # activate layers in sequence
