@@ -5,9 +5,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   ndims_lst = [3,2]  # BDNES
   obj_fns = {
     # MINIMIZATION: upper parabolic with minimum in [0]*ndims
-    min: -> (inds) { inds.map { |ind| ind.inject(0) { |mem,var| mem + var**2 } } },
+    min: -> (ind) { ind.inject(0) { |mem,var| mem + var**2 } },
     # MAXIMIZATION: lower parabolic with maximum in [0]*ndims
-    max: -> (inds) { inds.map { |ind| ind.inject(0) { |mem,var| mem - var**2 } } }
+    max: -> (ind) { ind.inject(0) { |mem,var| mem - var**2 } }
   }
   opt_types=obj_fns.keys
   one_opt_type = opt_types.first
@@ -28,6 +28,21 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       describe "full run" do
         opt_type = opt_types.sample # try either :)
         nes = NES::XNES.new ndims, obj_fns[opt_type], opt_type, rseed: 1
+        # note: `rseed: 2` less lucky, for `ntimes = 115` not converged yet
+        ntimes = 115
+        context "within #{ntimes} iterations" do
+          it "optimizes the negative squares function" do
+            ntimes.times { nes.train }
+            expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+            expect(nes.convergence.approximates? 0).to be_truthy
+          end
+        end
+      end
+
+      describe "with parallel fit" do
+        opt_type = opt_types.sample # try either :)
+        fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
+        nes = NES::XNES.new ndims, fit_par, opt_type, parallel_fit: true, rseed: 1
         # note: `rseed: 2` less lucky, for `ntimes = 115` not converged yet
         ntimes = 115
         context "within #{ntimes} iterations" do
@@ -93,6 +108,21 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       end
     end
 
+    describe "with parallel fit" do
+      opt_type = opt_types.sample # try either :)
+      fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
+      nes = NES::SNES.new ndims, fit_par, opt_type, parallel_fit: true, rseed: 1
+      # note: `rseed: 2` less lucky, for `ntimes = 110` FAILS
+      ntimes = 110
+      context "within #{ntimes} iterations" do
+        it "optimizes the negative squares function" do
+          ntimes.times { nes.train }
+          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.convergence.approximates? 0).to be_truthy
+        end
+      end
+    end
+
     describe "resuming" do
       it "#dump and #load" do
         a = NES::SNES.new ndims, obj_fns[one_opt_type], one_opt_type, rseed: 1
@@ -110,6 +140,20 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
     describe "full run" do
       opt_type = opt_types.sample # try either :)
       nes = NES::BDNES.new [3,2], obj_fns[opt_type], opt_type, rseed: 1
+      ntimes = 1000
+      context "within #{ntimes} iterations" do
+        it "optimizes the negative squares function" do
+          ntimes.times { nes.train }
+          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.convergence.approximates? 0).to be_truthy
+        end
+      end
+    end
+
+    describe "with parallel fit" do
+      opt_type = opt_types.sample # try either :)
+      fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
+      nes = NES::BDNES.new [3,2], fit_par, opt_type, parallel_fit: true, rseed: 1
       ntimes = 1000
       context "within #{ntimes} iterations" do
         it "optimizes the negative squares function" do

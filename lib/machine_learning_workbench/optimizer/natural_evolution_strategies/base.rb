@@ -2,17 +2,24 @@
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Natural Evolution Strategies base class
   class Base
-    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :id, :rng, :last_fits, :best
+    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best
 
     # NES object initialization
     # @param ndims [Integer] number of parameters to optimize
     # @param obj_fn [#call] any object defining a #call method (Proc, lambda, custom class)
     # @param opt_type [:min, :max] select minimization / maximization of obj_fn
     # @param rseed [Integer] allow for deterministic execution on rseed provided
-    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1
+    # @param mu_init [Numeric] values to initalize the distribution's mean
+    # @param sigma_init [Numeric] values to initialize the distribution's covariance
+    # @param parallel_fit [boolean] whether the `obj_fn` should be passed all the individuals 
+    #   together. In the canonical case the fitness function always scores a single individual;
+    #   in practical cases though it is easier to delegate the scoring parallelization to the
+    #   external fitness function. Turning this to `true` will make the algorithm pass _an
+    #   Array_ of individuals to the fitness function, rather than a single instance.
+    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false
       raise ArgumentError unless [:min, :max].include? opt_type
       raise ArgumentError unless obj_fn.respond_to? :call
-      @ndims, @opt_type, @obj_fn = ndims, opt_type, obj_fn
+      @ndims, @opt_type, @obj_fn, @parallel_fit = ndims, opt_type, obj_fn, parallel_fit
       @id = NMatrix.identity(ndims, dtype: :float64)
       rseed ||= Random.new_seed
       # puts "NES rseed: #{s}"  # currently disabled
@@ -89,7 +96,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def sorted_inds
       samples = standard_normal_samples
       inds = move_inds(samples).to_a
-      fits = obj_fn.call(inds)
+      fits = parallel_fit ? obj_fn.call(inds) : inds.map(&obj_fn)
       # Quick cure for NaN fitnesses
       fits.map! { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
       @last_fits = fits # allows checking for stagnation

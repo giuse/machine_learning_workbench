@@ -5,7 +5,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   describe :inds do
 
     context "when sorted by fitness" do
-      fit = lambda { |lst| lst.collect { |ind| ind.reduce :+ } }
+      fit = lambda { |ind| ind.reduce :+ }
 
       context "with artificial inds" do
         inds = $global_inds = [[7,8,9], [1,2,3], [4,5,6]]
@@ -44,7 +44,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         nes = TestNES.new(ndims, fit, :min)
         # fetch individuals through nes sampling
         inds = nes.standard_normal_samples.to_a
-        fits = fit.call(inds)
+        fits = inds.map &fit
         max_idx = fits.each_with_index.sort.map &:last
         max_sort = inds.values_at *max_idx
         min_sort = max_sort.reverse

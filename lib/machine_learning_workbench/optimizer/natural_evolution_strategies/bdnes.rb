@@ -5,15 +5,20 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     MAX_RSEED = 10**Random.new_seed.size # same range as Random.new_seed
 
-    attr_reader :ndims_lst, :obj_fn, :opt_type, :blocks, :popsize, :rng,
+    attr_reader :ndims_lst, :obj_fn, :opt_type, :parallel_fit, :blocks, :popsize, :rng,
       :best, :last_fits
 
-    # initialize a list of XNES for each block
-    def initialize ndims_lst, obj_fn, opt_type, rseed: nil, **init_opts
+    # Initialize a list of XNES, one for each block
+    # see class `Base` for the description of the rest of the arguments.
+    # @param ndims_lst [Array<Integer>] list of sizes for each block in the block-diagonal
+    #    matrix. Note: entire (reconstructed) individuals will be passed to the `obj_fn`
+    #    regardless of the division here described.
+    # @param init_opts [Hash] the rest of the options will be passed directly to XNES
+    def initialize ndims_lst, obj_fn, opt_type, parallel_fit: false, rseed: nil, **init_opts
       # mu_init: 0, sigma_init: 1
       # init_opts = {rseed: rseed, mu_init: mu_init, sigma_init: sigma_init}
       # TODO: accept list of `mu_init`s and `sigma_init`s
-      @ndims_lst, @obj_fn, @opt_type = ndims_lst, obj_fn, opt_type
+      @ndims_lst, @obj_fn, @opt_type, @parallel_fit = ndims_lst, obj_fn, opt_type, parallel_fit
       block_fit = -> (*args) { raise "Should never be called" }
       # the BD-NES seed should ensure deterministic reproducibility
       # but each block should have a different seed
@@ -48,7 +53,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       full_samples = samples_lst.transpose
 
       # Evaluate fitness of complete individuals
-      fits = obj_fn.call(full_inds)
+      fits = parallel_fit ? obj_fn.call(full_inds) : full_inds.map(&obj_fn)
       # Quick cure for NaN fitnesses
       fits.map! { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
       @last_fits = fits # allows checking for stagnation
@@ -91,7 +96,6 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     end
 
     def load data
-      # raise "Hell!" unless data.size == 2
       fit = -> (*args) { raise "Should never be called" }
       @blocks = data.map do |block_data|
         ndims = block_data.first.size
