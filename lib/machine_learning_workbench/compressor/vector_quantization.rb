@@ -1,4 +1,4 @@
-module MachineLearningWorkbench::Compression
+module MachineLearningWorkbench::Compressor
   class VectorQuantization
     attr_reader :ncentrs, :centrs, :dims, :vrange, :dtype, :lrate, :rng
     Verification = MachineLearningWorkbench::Tools::Verification
