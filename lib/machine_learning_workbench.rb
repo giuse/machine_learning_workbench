@@ -7,7 +7,6 @@ module MachineLearningWorkbench
   end
   module Optimizer
   end
-  end
   module Tools
   end
 end
