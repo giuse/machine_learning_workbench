@@ -1,5 +1,8 @@
 require "bundler/setup"
 require "machine_learning_workbench"
+require_relative 'helpers/uses_temporary_folders'
+
+STDOUT.sync = true
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

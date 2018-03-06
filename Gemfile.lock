@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    machine_learning_workbench (0)
+    machine_learning_workbench (0.0.0)
       nmatrix-atlas (~> 0.2)
 
 GEM
@@ -67,4 +67,4 @@ DEPENDENCIES
   rspec (~> 3.0)
 
 BUNDLED WITH
-   1.16.0
+   1.16.1
