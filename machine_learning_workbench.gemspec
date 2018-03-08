@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
 
   # Test
   spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rmagick"        # currently under trial
+  spec.add_development_dependency "rmagick"  # only used for one example
 
   # Debug
   spec.add_development_dependency "pry", "~> 0.10"
