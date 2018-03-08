@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
     and start a discussion if you are using this gem. Cheers!
   ].gsub('  ', '')
 
-  spec.files = `git ls-files -z`.split("\x0").refute { |f| f.start_with? "spec" }
+  spec.files = `git ls-files -z`.split("\x0").reject { |f| f.start_with? "spec" }
 
   # spec.bindir        = "exe"
   # spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "pry-stack_explorer", "~> 0.4"
 
   # Run
-  spec.requirements "libatlas-base-dev"  # library for following dependency
+  spec.requirements << "libatlas-base-dev"  # library for following dependency
   spec.add_dependency "nmatrix-atlas", "~> 0.2"
   spec.add_dependency "parallel", "~> 1.12"
 end
