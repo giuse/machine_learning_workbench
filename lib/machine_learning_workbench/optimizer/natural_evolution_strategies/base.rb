@@ -2,7 +2,7 @@
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Natural Evolution Strategies base class
   class Base
-    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best
+    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best, :rescale_popsize, :rescale_lrate
 
     # NES object initialization
     # @param ndims [Integer] number of parameters to optimize
@@ -11,15 +11,16 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # @param rseed [Integer] allow for deterministic execution on rseed provided
     # @param mu_init [Numeric] values to initalize the distribution's mean
     # @param sigma_init [Numeric] values to initialize the distribution's covariance
-    # @param parallel_fit [boolean] whether the `obj_fn` should be passed all the individuals 
+    # @param parallel_fit [boolean] whether the `obj_fn` should be passed all the individuals
     #   together. In the canonical case the fitness function always scores a single individual;
     #   in practical cases though it is easier to delegate the scoring parallelization to the
     #   external fitness function. Turning this to `true` will make the algorithm pass _an
     #   Array_ of individuals to the fitness function, rather than a single instance.
-    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false
+    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1
       raise ArgumentError unless [:min, :max].include? opt_type
       raise ArgumentError unless obj_fn.respond_to? :call
       @ndims, @opt_type, @obj_fn, @parallel_fit = ndims, opt_type, obj_fn, parallel_fit
+      @rescale_popsize, @rescale_lrate = rescale_popsize, rescale_lrate
       @id = NMatrix.identity(ndims, dtype: :float64)
       rseed ||= Random.new_seed
       # puts "NES rseed: #{s}"  # currently disabled
@@ -40,11 +41,11 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     # Memoized automatic magic numbers
     # NOTE: Doubling popsize and halving lrate often helps
-    def utils;   @utilities ||= cmaes_utilities   end
+    def utils;   @utilities ||= cmaes_utilities end
     # (see #utils)
-    def popsize; @popsize   ||= cmaes_popsize * 2 end
+    def popsize; @popsize   ||= cmaes_popsize * rescale_popsize end
     # (see #utils)
-    def lrate;   @lrate     ||= cmaes_lrate       end
+    def lrate;   @lrate     ||= cmaes_lrate * rescale_lrate end
 
     # Magic numbers from CMA-ES (TODO: add proper citation)
     # @return [NMatrix] scale-invariant utilities
