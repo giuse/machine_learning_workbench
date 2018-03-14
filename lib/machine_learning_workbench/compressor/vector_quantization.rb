@@ -26,15 +26,13 @@ module MachineLearningWorkbench::Compressor
       NMatrix.random dims, dtype: dtype
     end
 
-    # Computes similarities between image and all centroids
-    def similarities img
-      raise NotImplementedError if img.shape.size > 1
-      # centrs.map { |c| c.dot(img).first }
-      require 'parallel'
-      Parallel.map(centrs) { |c| c.dot(img).first }
+    # Computes similarities between vector and all centroids
+    def similarities vec
+      raise NotImplementedError if vec.shape.size > 1
+      centrs.map { |c| c.dot(vec).first }
+      # require 'parallel'
+      # Parallel.map(centrs) { |c| c.dot(vec).first }
     end
-    # The list of similarities also constitutes the encoding of the image
-    alias encode similarities
 
     # Returns index and similitude of most similar centroid to image
     def most_similar_centr img
@@ -49,26 +47,27 @@ module MachineLearningWorkbench::Compressor
       centrs[most_similar_centr(img).first]
     end
 
-    # Per-pixel errors in reconstructing image
-    def reconstr_error img
-      reconstruction(img) - img
+    # Per-pixel errors in reconstructing vector
+    def reconstr_error vec
+      reconstruction(vec) - vec
     end
 
-    # Train on one image
-    def train_one img, simils: nil
-      trg_idx, _simil = simils || most_similar_centr(img)
-      centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + img * lrate
+    # Train on one vector
+    # @param vec [NMatrix]
+    def train_one vec, simils: nil
+      trg_idx, _simil = simils || most_similar_centr(vec)
+      centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
       Verification.in_range! centrs[trg_idx], vrange
       centrs[trg_idx]
     end
 
-    # Train on image list
-    def train img_lst, debug: false
+    # Train on vector list
+    def train vec_lst, debug: false
       # Two ways here:
-      # - Batch: canonical, centrs updated with each img
+      # - Batch: canonical, centrs updated with each vec
       # - Parallel: could be parallel either on simils or on training (?)
       # Unsure on the correctness of either Parallel, let's stick with Batch
-      img_lst.each { |img| train_one img; print '.' if debug }
+      vec_lst.each { |vec| train_one vec; print '.' if debug }
     end
   end
 end
