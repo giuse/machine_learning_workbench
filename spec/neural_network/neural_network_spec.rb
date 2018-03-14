@@ -8,7 +8,6 @@ RSpec.describe MachineLearningWorkbench::NeuralNetwork do
 
     it "#initialize" do
       expect(net.struct).to eq(netstruct)
-      expect(net.act_fn.call([1,2,3])).to eq(NN::FeedForward.act_fn(:sigmoid).call([1,2,3]))
     end
 
     it "#reset" do
