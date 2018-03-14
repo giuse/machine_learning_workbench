@@ -48,3 +48,13 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+## References
+
+Please feel free to contribute to this list (see `Contributing` above).
+
+- NES stands for Natural Evolution Strategies. Check its [Wikipedia page](https://en.wikipedia.org/wiki/Natural_evolution_strategy) for more info.
+- CMA-ES stands for Covariance Matrix Adaptation Evolution Strategy. Check its [Wikipedia page](https://en.wikipedia.org/wiki/CMA-ES) for more info.
+- UL-ELR stands for Unsupervised Learning plus Evolutionary Reinforcement Learning, from the paper _"Intrinsically Motivated Neuroevolution for Vision-Based Reinforcement Learning" (ICDL2011)_. Check [here](https://exascale.info/members/giuseppe-cuccu/) for citation reference and pdf.
+- BD-NES stands for Block Diagonal Natural Evolution Strategies, from the homonymous paper _"Block Diagonal Natural Evolution Strategies" (PPSN2012)_. Check [here](https://exascale.info/members/giuseppe-cuccu/) for citation reference and pdf.
+
