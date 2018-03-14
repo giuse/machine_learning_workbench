@@ -5,12 +5,12 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     attr_reader :log_sigma
 
     def initialize_distribution mu_init: 0, sigma_init: 1
-      @mu = NMatrix.new([1, ndims], mu_init, dtype: :float64)
+      @mu = NMatrix.new([1, ndims], mu_init, dtype: dtype)
       sigma_init = [sigma_init]*ndims unless sigma_init.kind_of? Enumerable
-      @sigma = NMatrix.diag(sigma_init, dtype: :float64)
+      @sigma = NMatrix.diag(sigma_init, dtype: dtype)
       # Works with the log of sigma to avoid continuous decompositions (thanks Sun Yi)
       log_sigma_init = sigma_init.map &Math.method(:log)
-      @log_sigma = NMatrix.diag(log_sigma_init, dtype: :float64)
+      @log_sigma = NMatrix.diag(log_sigma_init, dtype: dtype)
     end
 
     def train picks: sorted_inds
@@ -38,8 +38,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def load data
       raise ArgumentError unless data.size == 2
       mu_ary, log_sigma_ary = data
-      @mu = NMatrix[*mu_ary, dtype: :float64]
-      @log_sigma = NMatrix[*log_sigma_ary, dtype: :float64]
+      @mu = NMatrix[*mu_ary, dtype: dtype]
+      @log_sigma = NMatrix[*log_sigma_ary, dtype: dtype]
       @sigma = log_sigma.exponential
     end
   end

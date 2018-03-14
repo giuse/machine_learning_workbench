@@ -72,7 +72,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       block_samples = sorted_samples.transpose
 
       # then back to NMatrix for usage in training
-      block_samples.map { |sample| NMatrix[*sample, dtype: :float64] }
+      block_samples.map { |sample| NMatrix[*sample, dtype: dtype] }
     end
 
     # duck-type the interface: [:train, :mu, :convergence, :save, :load]

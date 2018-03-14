@@ -13,7 +13,7 @@ module MachineLearningWorkbench::NeuralNetwork
     # Activates a layer of the network
     # @param i [Integer] the layer to activate, zero-indexed
     def activate_layer i
-      act_fn.call( state[i].dot layers[i] )
+      act_fn.call(state[i].dot layers[i])
     end
 
   end
