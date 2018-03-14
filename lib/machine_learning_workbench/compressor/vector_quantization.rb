@@ -21,7 +21,9 @@ module MachineLearningWorkbench::Compressor
 
     # Creates a new (random) centroid
     def new_centr
-      NMatrix.new(dims, dtype: dtype) { rng.rand Range.new *vrange }
+      # TODO: this is too slow, find another way to use the rng
+      # NMatrix.new(dims, dtype: dtype) { rng.rand Range.new *vrange }
+      NMatrix.random dims, dtype: dtype
     end
 
     # Computes similarities between image and all centroids
