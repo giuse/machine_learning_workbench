@@ -34,17 +34,41 @@ module MachineLearningWorkbench::Compressor
       # Parallel.map(centrs) { |c| c.dot(vec).first }
     end
 
-    # Returns index and similitude of most similar centroid to image
-    def most_similar_centr img
-      simils = similarities img
+    # Encode a vector
+    def encode vec, type: :most_similar
+      simils = similarities vec
+      case type
+      when :most_similar
+        simils.index simils.max
+      when :ensemble
+        simils
+      when :ensemble_norm
+        tot = simils.reduce(:+)
+        simils.map { |s| s/tot }
+      else raise ArgumentError, "unrecognized encode type: #{type}"
+      end
+    end
+
+    # Reconstruct vector from its code (encoding)
+    def reconstruction code, type: :most_similar
+      case type
+      when :most_similar
+        centrs[code]
+      when :ensemble
+        tot = code.reduce :+
+        centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
+      when :ensemble_norm
+        centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
+      else raise ArgumentError, "unrecognized reconstruction type: #{type}"
+      end
+    end
+
+    # Returns index and similitude of most similar centroid to vector
+    def most_similar_centr vec
+      simils = similarities vec
       max_simil = simils.max
       max_idx = simils.index max_simil
       [max_idx, max_simil]
-    end
-
-    # Reconstruct image as its most similar centroid
-    def reconstruction img
-      centrs[most_similar_centr(img).first]
     end
 
     # Per-pixel errors in reconstructing vector
@@ -54,11 +78,12 @@ module MachineLearningWorkbench::Compressor
 
     # Train on one vector
     # @param vec [NMatrix]
+    # @return [Integer] index of trained centroid
     def train_one vec, simils: nil
       trg_idx, _simil = simils || most_similar_centr(vec)
       centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
       Verification.in_range! centrs[trg_idx], vrange
-      centrs[trg_idx]
+      trg_idx
     end
 
     # Train on vector list
