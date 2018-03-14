@@ -1,1 +1,0 @@
-require_relative 'compression/vector_quantization'
