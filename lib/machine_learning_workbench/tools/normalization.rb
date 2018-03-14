@@ -4,7 +4,7 @@ module MachineLearningWorkbench::Tools
       from ||= nmat.minmax
       old_min, old_max = from
       new_min, new_max = to
-      res = (nmat-old_min)*(new_max-new_min)/(old_max-old_min)+new_min
+      (nmat-old_min)*(new_max-new_min)/(old_max-old_min)+new_min
     end
 
     # @param per_column [bool] wheather to compute stats per-column or matrix-wise
@@ -16,7 +16,7 @@ module MachineLearningWorkbench::Tools
       stddevs.map! { |v| v.zero? ? 1 : v }
       mean_mat = means.repeat nmat.rows, 0
       stddev_mat = stddevs.repeat nmat.rows, 0
-      ret = (nmat - mean_mat) / stddev_mat
+      (nmat - mean_mat) / stddev_mat
     end
   end
 end
