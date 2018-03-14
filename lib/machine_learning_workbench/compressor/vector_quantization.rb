@@ -7,16 +7,14 @@ module MachineLearningWorkbench::Compressor
       @rng = Random.new rseed
       @ncentrs = ncentrs
       @dtype = dtype
-      @dims = dims
+      @dims = Array(dims)
       @lrate = lrate
       @vrange = case vrange
-      when Array
-        raise ArgumentError, "vrange size not 2: #{vrange}" unless vrange.size == 2
-        vrange.map &method(:Float)
-      when Range
-        [vrange.first, vrange.last].map &method(:Float)
-      else
-        raise ArgumentError, "vrange: unrecognized type: #{vrange.class}"
+        when Array
+          raise ArgumentError, "vrange size not 2: #{vrange}" unless vrange.size == 2
+          vrange.map &method(:Float)
+        when Range then [vrange.first, vrange.last].map &method(:Float)
+        else raise ArgumentError, "vrange: unrecognized type: #{vrange.class}"
       end
       @centrs = ncentrs.times.map { new_centr }
     end
