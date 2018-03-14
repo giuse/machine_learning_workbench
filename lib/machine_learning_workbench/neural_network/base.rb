@@ -17,23 +17,24 @@ module MachineLearningWorkbench::NeuralNetwork
     # @!attribute [r] struct
     #   list of number of (inputs or) neurons in each layer
     #   @return [Array<Integer>] structure of the network
-    attr_reader :layers, :state, :act_fn, :struct
+    attr_reader :layers, :state, :act_fn, :struct, :dtype
 
 
     ## Initialization
 
     # @param struct [Array<Integer>] list of layer sizes
     # @param act_fn [Symbol] choice of activation function for the neurons
-    def initialize struct, act_fn: nil
+    # @param dtype [NMatrix dtype] NMatrix dtype for weights and states
+    def initialize struct, act_fn: nil, dtype: :float32
       @struct = struct
-      @act_fn = self.class.act_fn(act_fn || :sigmoid)
+      @act_fn = self.get_act_fn(act_fn || :sigmoid)
       # @state holds both inputs, possibly recurrency, and bias
       # it is a complete input for the next layer, hence size from layer sizes
       @state = layer_row_sizes.collect do |size|
-        NMatrix.zeros([1, size], dtype: :float64)
+        NMatrix.zeros([1, size], dtype: dtype)
       end
       # to this, append a matrix to hold the final network output
-      @state.push NMatrix.zeros([1, nneurs(-1)], dtype: :float64)
+      @state.push NMatrix.zeros([1, nneurs(-1)], dtype: dtype)
       reset_state
     end
 
@@ -126,7 +127,7 @@ module MachineLearningWorkbench::NeuralNetwork
       raise ArgumentError unless weights.size == nweights
       weights_iter = weights.each
       @layers = layer_shapes.collect do |shape|
-        NMatrix.new(shape, dtype: :float64) { weights_iter.next }
+        NMatrix.new(shape, dtype: dtype) { weights_iter.next }
       end
       reset_state
       return true
@@ -137,7 +138,7 @@ module MachineLearningWorkbench::NeuralNetwork
 
     # The "fixed `1`" used in the layer's input
     def bias
-      @bias ||= NMatrix[[1], dtype: :float64]
+      @bias ||= NMatrix[[1], dtype: dtype]
     end
 
     # Activate the network on a given input
@@ -168,10 +169,10 @@ module MachineLearningWorkbench::NeuralNetwork
 
     # Activation function caller. Allows to cleanly define the activation function as one-dimensional, by calling it over the inputs and building a NMatrix to return.
     # @return [NMatrix] activations for one layer
-    def self.act_fn type, *args
+    def get_act_fn type, *args
       fn = send(type,*args)
       lambda do |inputs|
-        NMatrix.new([1, inputs.size], dtype: :float64) do |_,i|
+        NMatrix.new([1, inputs.size], dtype: dtype) do |_,i|
           # single-row matrix, indices are columns
           fn.call inputs[i]
         end
@@ -179,14 +180,14 @@ module MachineLearningWorkbench::NeuralNetwork
     end
 
     # Traditional sigmoid with variable steepness
-    def self.sigmoid k=0.5
+    def sigmoid k=0.5
       # k is steepness:  0<k<1 is flatter, 1<k is flatter
       # flatter makes activation less sensitive, better with large number of inputs
       lambda { |x| 1.0 / (Math.exp(-k * x) + 1.0) }
     end
 
     # Traditional logistic
-    def self.logistic
+    def logistic
       lambda { |x|
         exp = Math.exp(x)
         exp.infinite? ? exp : exp / (1.0 + exp)
@@ -195,7 +196,7 @@ module MachineLearningWorkbench::NeuralNetwork
 
     # LeCun hyperbolic activation
     # @see http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf Section 4.4
-    def self.lecun_hyperbolic
+    def lecun_hyperbolic
       lambda { |x| 1.7159 * Math.tanh(2.0*x/3.0) + 1e-3*x }
     end
 

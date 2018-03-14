@@ -2,7 +2,7 @@
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Natural Evolution Strategies base class
   class Base
-    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best, :rescale_popsize, :rescale_lrate
+    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best, :rescale_popsize, :rescale_lrate, :dtype
 
     # NES object initialization
     # @param ndims [Integer] number of parameters to optimize
@@ -11,22 +11,27 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # @param rseed [Integer] allow for deterministic execution on rseed provided
     # @param mu_init [Numeric] values to initalize the distribution's mean
     # @param sigma_init [Numeric] values to initialize the distribution's covariance
-    # @param parallel_fit [boolean] whether the `obj_fn` should be passed all the individuals
-    #   together. In the canonical case the fitness function always scores a single individual;
-    #   in practical cases though it is easier to delegate the scoring parallelization to the
-    #   external fitness function. Turning this to `true` will make the algorithm pass _an
-    #   Array_ of individuals to the fitness function, rather than a single instance.
-    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1
+    # @param parallel_fit [boolean] whether the `obj_fn` should be passed all the
+    #   individuals together. In the canonical case the fitness function always scores a
+    #   single individual; in practical cases though it is easier to delegate the scoring
+    #   parallelization to the external fitness function. Turning this to `true` will make
+    #   the algorithm pass _an Array_ of individuals to the fitness function, rather than
+    #   a single instance.
+    # @param rescale_popsize [Float] scaling for the default population size
+    # @param rescale_lrate [Float] scaling for the default learning rate
+    # @param dtype [NMatrix dtype] NMatrix dtype for all matrix computation
+    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1, dtype: :float64
       raise ArgumentError unless [:min, :max].include? opt_type
       raise ArgumentError unless obj_fn.respond_to? :call
       @ndims, @opt_type, @obj_fn, @parallel_fit = ndims, opt_type, obj_fn, parallel_fit
       @rescale_popsize, @rescale_lrate = rescale_popsize, rescale_lrate
-      @id = NMatrix.identity(ndims, dtype: :float64)
+      @id = NMatrix.identity(ndims, dtype: dtype)
       rseed ||= Random.new_seed
       # puts "NES rseed: #{s}"  # currently disabled
       @rng = Random.new rseed
       @best = [(opt_type==:max ? -1 : 1) * Float::INFINITY, nil]
       @last_fits = []
+      @dtype = dtype
       initialize_distribution mu_init: mu_init, sigma_init: sigma_init
     end
 
@@ -58,7 +63,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       total = log_range.reduce(:+)
       buf = 1.0/popsize
       vals = log_range.collect { |v| v / total - buf }.reverse
-      NMatrix[vals, dtype: :float64]
+      NMatrix[vals, dtype: dtype]
     end
 
     # (see #cmaes_utilities)
@@ -77,7 +82,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     #   popsize multivariate samples of length ndims
     # @return [NMatrix] standard normal samples
     def standard_normal_samples
-      NMatrix.new([popsize, ndims], dtype: :float64) { standard_normal_sample }
+      NMatrix.new([popsize, ndims], dtype: dtype) { standard_normal_sample }
     end
 
     # Move standard normal samples to current distribution
@@ -85,7 +90,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def move_inds inds
       # TODO: can we reduce the transpositions?
       # sigma.dot(inds.transpose).map(&mu.method(:+)).transpose
-      multi_mu = NMatrix[*inds.rows.times.collect {mu.to_a}, dtype: :float64].transpose
+      multi_mu = NMatrix[*inds.rows.times.collect {mu.to_a}, dtype: dtype].transpose
       (multi_mu + sigma.dot(inds.transpose)).transpose
       # sigma.dot(inds.transpose).transpose + inds.rows.times.collect {mu.to_a}.to_nm
     end
@@ -106,7 +111,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       this_best = sorted.last.take(2)
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
-      NMatrix[*sorted.map(&:last), dtype: :float64]
+      NMatrix[*sorted.map(&:last), dtype: dtype]
     end
 
     # @!method interface_methods

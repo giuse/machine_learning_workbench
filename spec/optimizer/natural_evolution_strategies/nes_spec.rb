@@ -11,6 +11,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   }
   opt_types=obj_fns.keys
   one_opt_type = opt_types.first
+  ntrains = 180
 
   describe NES::XNES do
 
@@ -28,11 +29,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       describe "full run" do
         opt_type = opt_types.sample # try either :)
         nes = NES::XNES.new ndims, obj_fns[opt_type], opt_type, rseed: 1
-        # note: `rseed: 2` less lucky, for `ntimes = 115` not converged yet
-        ntimes = 115
-        context "within #{ntimes} iterations" do
+        context "within #{ntrains} iterations" do
           it "optimizes the negative squares function" do
-            ntimes.times { nes.train }
+            ntrains.times { nes.train }
             expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
             expect(nes.convergence.approximates? 0).to be_truthy
           end
@@ -43,11 +42,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         opt_type = opt_types.sample # try either :)
         fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
         nes = NES::XNES.new ndims, fit_par, opt_type, parallel_fit: true, rseed: 1
-        # note: `rseed: 2` less lucky, for `ntimes = 115` not converged yet
-        ntimes = 115
-        context "within #{ntimes} iterations" do
+        context "within #{ntrains} iterations" do
           it "optimizes the negative squares function" do
-            ntimes.times { nes.train }
+            ntrains.times { nes.train }
             expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
             expect(nes.convergence.approximates? 0).to be_truthy
           end
@@ -97,11 +94,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
     describe "full run" do
       opt_type = opt_types.sample # try either :)
       nes = NES::SNES.new ndims, obj_fns[opt_type], opt_type, rseed: 1
-      # note: `rseed: 2` less lucky, for `ntimes = 110` FAILS
-      ntimes = 110
-      context "within #{ntimes} iterations" do
+      context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
-          ntimes.times { nes.train }
+          ntrains.times { nes.train }
           expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
@@ -112,11 +107,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       opt_type = opt_types.sample # try either :)
       fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
       nes = NES::SNES.new ndims, fit_par, opt_type, parallel_fit: true, rseed: 1
-      # note: `rseed: 2` less lucky, for `ntimes = 110` FAILS
-      ntimes = 110
-      context "within #{ntimes} iterations" do
+      context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
-          ntimes.times { nes.train }
+          ntrains.times { nes.train }
           expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
@@ -140,10 +133,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
     describe "full run" do
       opt_type = opt_types.sample # try either :)
       nes = NES::BDNES.new [3,2], obj_fns[opt_type], opt_type, rseed: 1
-      ntimes = 1000
-      context "within #{ntimes} iterations" do
+      context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
-          ntimes.times { nes.train }
+          ntrains.times { nes.train }
           expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
@@ -154,10 +146,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       opt_type = opt_types.sample # try either :)
       fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
       nes = NES::BDNES.new [3,2], fit_par, opt_type, parallel_fit: true, rseed: 1
-      ntimes = 1000
-      context "within #{ntimes} iterations" do
+      context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
-          ntimes.times { nes.train }
+          ntrains.times { nes.train }
           expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
