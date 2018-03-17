@@ -1,7 +1,7 @@
 
 RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies do
   NES = MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
-  ndims = 5          # XNES and SNES
+  ndims = 5          # XNES, SNES RNES
   ndims_lst = [3,2]  # BDNES
   obj_fns = {
     # MINIMIZATION: upper parabolic with minimum in [0]*ndims
@@ -122,6 +122,45 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         3.times { a.train }
         a_dump = a.save
         b = NES::SNES.new ndims, obj_fns[one_opt_type], one_opt_type, rseed: 2
+        b.load a_dump
+        b_dump = b.save
+        expect(a_dump).to eq(b_dump)
+      end
+    end
+  end
+
+  describe NES::RNES do
+    describe "full run" do
+      opt_type = opt_types.sample # try either :)
+      nes = NES::RNES.new ndims, obj_fns[opt_type], opt_type, rseed: 1
+      context "within #{ntrains} iterations" do
+        it "optimizes the negative squares function" do
+          ntrains.times { nes.train }
+          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.convergence.approximates? 0).to be_truthy
+        end
+      end
+    end
+
+    describe "with parallel fit" do
+      opt_type = opt_types.sample # try either :)
+      fit_par = -> (inds) { inds.map &obj_fns[opt_type] }
+      nes = NES::RNES.new ndims, fit_par, opt_type, parallel_fit: true, rseed: 1
+      context "within #{ntrains} iterations" do
+        it "optimizes the negative squares function" do
+          ntrains.times { nes.train }
+          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.convergence.approximates? 0).to be_truthy
+        end
+      end
+    end
+
+    describe "resuming" do
+      it "#dump and #load" do
+        a = NES::RNES.new ndims, obj_fns[one_opt_type], one_opt_type, rseed: 1
+        3.times { a.train }
+        a_dump = a.save
+        b = NES::RNES.new ndims, obj_fns[one_opt_type], one_opt_type, rseed: 2
         b.load a_dump
         b_dump = b.save
         expect(a_dump).to eq(b_dump)
