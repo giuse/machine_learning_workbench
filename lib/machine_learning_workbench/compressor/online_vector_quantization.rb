@@ -3,25 +3,24 @@ module MachineLearningWorkbench::Compressor
   # Optimized for online training.
   class OnlineVectorQuantization < VectorQuantization
 
-    attr_reader :min_lrate, :ntrains
+    attr_reader :min_lrate
 
     def initialize min_lrate: 0.01, **opts
       super **opts.merge({lrate: nil})
       @min_lrate = min_lrate
-      @ntrains = [0]*ncentrs
     end
 
     # Decaying per-centroid learning rate.
     # @param centr_idx [Integer] index of the centroid
     # @param lower_bound [Float] minimum learning rate
+    # @note nicely overloads the `attr_reader` of parent class
     def lrate centr_idx, lower_bound: min_lrate
       [1/ntrains[centr_idx], lower_bound].max
     end
 
-    # Train on one image
-    # @return [Integer] index of trained centroid
-    def train_one *args, **opts
-      super.tap { |trg_idx| ntrains[trg_idx] += 1 }
+    def train_one *args, **kwargs
+      raise NotImplementedError "Remember to overload this using the new lrate(idx)"
     end
+
   end
 end

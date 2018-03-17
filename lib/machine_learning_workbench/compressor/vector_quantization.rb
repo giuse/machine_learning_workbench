@@ -2,7 +2,7 @@ module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
   class VectorQuantization
-    attr_reader :ncentrs, :centrs, :dims, :vrange, :dtype, :lrate, :rng
+    attr_reader :ncentrs, :centrs, :dims, :vrange, :dtype, :lrate, :rng, :ntrains
     Verification = MachineLearningWorkbench::Tools::Verification
 
     def initialize ncentrs:, dims:, vrange:, dtype:, lrate:, rseed: Random.new_seed
@@ -10,15 +10,18 @@ module MachineLearningWorkbench::Compressor
       @ncentrs = ncentrs
       @dtype = dtype
       @dims = Array(dims)
+      raise ArgumentError "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
       @lrate = lrate
       @vrange = case vrange
         when Array
           raise ArgumentError, "vrange size not 2: #{vrange}" unless vrange.size == 2
           vrange.map &method(:Float)
-        when Range then [vrange.first, vrange.last].map &method(:Float)
+        when Range
+          [vrange.first, vrange.last].map &method(:Float)
         else raise ArgumentError, "vrange: unrecognized type: #{vrange.class}"
       end
       @centrs = ncentrs.times.map { new_centr }
+      @ntrains = [0]*ncentrs # useful to understand what happens
     end
 
     # Creates a new (random) centroid
@@ -66,6 +69,8 @@ module MachineLearningWorkbench::Compressor
     end
 
     # Returns index and similitude of most similar centroid to vector
+    # @return [Array<Integer, Float>] the index of the most similar centroid,
+    #   followed by the corresponding similarity
     def most_similar_centr vec
       simils = similarities vec
       max_simil = simils.max
@@ -74,16 +79,26 @@ module MachineLearningWorkbench::Compressor
     end
 
     # Per-pixel errors in reconstructing vector
+    # @return [NMatrix] residuals
     def reconstr_error vec
       reconstruction(vec) - vec
     end
 
     # Train on one vector
-    # @param vec [NMatrix]
     # @return [Integer] index of trained centroid
-    def train_one vec, simils: nil
-      trg_idx, _simil = simils || most_similar_centr(vec)
+    def train_one vec
+
+      trg_idx, _simil = most_similar_centr(vec)
+      # note: uhm that actually looks like a dot product... optimizable?
+      #   `[c[i], vec].dot([1-lrate, lrate])`
       centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
+
+      # the problem is here. This 'in_range' should never need to be called.
+      # if the centroid and the new image are trained in the same range,
+      # multiplying one to 1-lrate and the other to lrate should already normalize
+      # everything. I should not need the #in_range! below, which BTW squashes
+      # blacks and whites.
+
       Verification.in_range! centrs[trg_idx], vrange
       trg_idx
     end
@@ -94,7 +109,11 @@ module MachineLearningWorkbench::Compressor
       # - Batch: canonical, centrs updated with each vec
       # - Parallel: could be parallel either on simils or on training (?)
       # Unsure on the correctness of either Parallel, let's stick with Batch
-      vec_lst.each { |vec| train_one vec; print '.' if debug }
+      vec_lst.each_with_index do |vec, i|
+        trained_idx = train_one vec
+        print '.' if debug
+        ntrains[trained_idx] += 1
+      end
     end
   end
 end
