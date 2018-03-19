@@ -95,7 +95,7 @@ RSpec.describe MachineLearningWorkbench::Monkey do
           left.approximates? right
         end
       end
-      
+
       it "solves the eigendecomposition" do
         expect(eigencheck?(nmat, trg_eigenvalues, trg_eigenvectors)).to be_truthy
         expect(eigenvalues.approximates? trg_eigenvalues).to be_truthy
@@ -112,6 +112,13 @@ RSpec.describe MachineLearningWorkbench::Monkey do
         left = testmat.exponential
         right = NMatrix[*exp]
         expect(left.approximates? right).to be_truthy
+      end
+    end
+
+    describe "row_norms" do
+      trg_row_norms = [[3.7416573], [8.7749643], [13.928388]]
+      it "computes the correct result" do
+        expect(nmat.row_norms.approximates? NMatrix[*trg_row_norms]).to be_truthy
       end
     end
 
@@ -172,7 +179,7 @@ end
 
 RSpec.describe "NMatrix inconsistencies, fixed in `Monkey`" do
 
-  
+
   # IF ANY OF THESE TESTS FAIL, DROP THE MONKEY AND USE THESE METHODS!
 
 

@@ -145,9 +145,29 @@ module MachineLearningWorkbench::Monkey
     end
 
 
+    # The NMatrix documentation refers to a function `#nrm2` (aliased to `#norm2`)
+    # to compute the norm of a matrix. Fun fact: that is the implementation for vectors,
+    # and calling it on a matrix returns NotImplementedError :) you have to toggle the
+    # source to understand why:
+    # http://sciruby.com/nmatrix/docs/NMatrix.html#method-i-norm2 .
+    # A search for the actual source on GitHub reveals a (I guess new?) method
+    # `#matrix_norm`, with a decent choice of norms to choose from. Unfortunately, as the
+    # name says, it is stuck to compute full-matrix norms.
+    # So I resigned to dance to `Array`s and back, and implemented it with `#each_rank`.
+    # Unexplicably, I get a list of constant values as the return value; same with
+    # `#each_row`.
+    # What can I say, we're back to referencing rows by index. I am just wasting too much
+    # time figuring out these details to write a generalized version with an optional
+    # `dimension` to go along.
+    # @return [NMatrix] the vector norm along the rows
+    def row_norms
+      norms = rows.times.map { |i| row(i).norm2 }
+      NMatrix.new [rows, 1], norms, dtype: dtype
+    end
+
     # `NMatrix#to_a` has inconsistent behavior: single-row matrices are
     # converted to one-dimensional Arrays rather than a 2D Array with
-    # only one row. Patching `#to_a` directly is not feasible as the 
+    # only one row. Patching `#to_a` directly is not feasible as the
     # constructor seems to depend on it, and I have little interest in
     # investigating further.
     # @return [Array<Array>] a consistent array representation, such that
@@ -187,6 +207,16 @@ module MachineLearningWorkbench::Monkey
       end
     end
   end
+
+  module CPtrDumpable
+    def marshall_dump
+      [shape, dtype, data_pointer]
+    end
+
+    def marshall_load
+      raise NotImplementedError, "There's no setter for the data pointer!"
+    end
+  end
 end
 
 Array.include MachineLearningWorkbench::Monkey::Dimensionable
@@ -195,3 +225,4 @@ require 'nmatrix/lapack_plugin' # loads whichever is installed between atlas and
 NMatrix.include MachineLearningWorkbench::Monkey::AdvancelyOperationable
 Numeric.include MachineLearningWorkbench::Monkey::NumericallyApproximatable
 NMatrix.include MachineLearningWorkbench::Monkey::MatrixApproximatable
+NMatrix.include MachineLearningWorkbench::Monkey::CPtrDumpable

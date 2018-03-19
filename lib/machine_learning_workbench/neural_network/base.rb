@@ -119,15 +119,18 @@ module MachineLearningWorkbench::NeuralNetwork
     end
 
     # Loads a plain list of weights into the weight matrices (one per layer).
-    # Preserves order.
+    # Preserves order. Reuses allocated memory if available.
     # @input weights [Array<Float>] weights to load
     # @return [true] always true. If something's wrong it simply fails, and if
     #   all goes well there's nothing to return but a confirmation to the caller.
     def load_weights weights
       raise ArgumentError unless weights.size == nweights
       weights_iter = weights.each
-      @layers = layer_shapes.collect do |shape|
-        NMatrix.new(shape, dtype: dtype) { weights_iter.next }
+      @layers ||= layer_shapes.collect { |shape| NMatrix.new shape, dtype: dtype }
+      layers.each do |nmat|
+        nmat.each_with_indices do |_val, *idxs|
+          nmat[*idxs] = weights_iter.next
+        end
       end
       reset_state
       return true
@@ -198,6 +201,11 @@ module MachineLearningWorkbench::NeuralNetwork
     # @see http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf Section 4.4
     def lecun_hyperbolic
       lambda { |x| 1.7159 * Math.tanh(2.0*x/3.0) + 1e-3*x }
+    end
+
+    # Rectified Linear Unit (ReLU)
+    def relu
+      lambda { |x| x>0 && x || 0 }
     end
 
 
