@@ -207,6 +207,16 @@ module MachineLearningWorkbench::Monkey
       end
     end
   end
+
+  module CPtrDumpable
+    def marshall_dump
+      [shape, dtype, data_pointer]
+    end
+
+    def marshall_load
+      raise NotImplementedError, "There's no setter for the data pointer!"
+    end
+  end
 end
 
 Array.include MachineLearningWorkbench::Monkey::Dimensionable
@@ -215,3 +225,4 @@ require 'nmatrix/lapack_plugin' # loads whichever is installed between atlas and
 NMatrix.include MachineLearningWorkbench::Monkey::AdvancelyOperationable
 Numeric.include MachineLearningWorkbench::Monkey::NumericallyApproximatable
 NMatrix.include MachineLearningWorkbench::Monkey::MatrixApproximatable
+NMatrix.include MachineLearningWorkbench::Monkey::CPtrDumpable
