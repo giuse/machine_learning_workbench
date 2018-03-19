@@ -10,7 +10,7 @@ module MachineLearningWorkbench::Compressor
       @ncentrs = ncentrs
       @dtype = dtype
       @dims = Array(dims)
-      raise ArgumentError, "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
+      check_lrate lrate # hack: so that we can overload it in online_vq
       @lrate = lrate
       @vrange = case vrange
         when Array
@@ -22,6 +22,12 @@ module MachineLearningWorkbench::Compressor
       end
       @centrs = ncentrs.times.map { new_centr }
       @ntrains = [0]*ncentrs # useful to understand what happens
+    end
+
+    # Verify lrate to be present and withing unit bounds
+    # As a separate method only so it can be overloaded in online_vq
+    def check_lrate lrate
+      raise ArgumentError, "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
     end
 
     # Creates a new (random) centroid
@@ -92,14 +98,7 @@ module MachineLearningWorkbench::Compressor
       # note: uhm that actually looks like a dot product... optimizable?
       #   `[c[i], vec].dot([1-lrate, lrate])`
       centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
-
-      # the problem is here. This 'in_range' should never need to be called.
-      # if the centroid and the new image are trained in the same range,
-      # multiplying one to 1-lrate and the other to lrate should already normalize
-      # everything. I should not need the #in_range! below, which BTW squashes
-      # blacks and whites.
-
-      Verification.in_range! centrs[trg_idx], vrange
+      # Verification.in_range! centrs[trg_idx], vrange # I verified it's not needed
       trg_idx
     end
 

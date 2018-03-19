@@ -10,6 +10,9 @@ module MachineLearningWorkbench::Compressor
       @min_lrate = min_lrate
     end
 
+    # Overloading lrate check from original VQ
+    def check_lrate lrate; nil; end
+
     # Decaying per-centroid learning rate.
     # @param centr_idx [Integer] index of the centroid
     # @param lower_bound [Float] minimum learning rate
