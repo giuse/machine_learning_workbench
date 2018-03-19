@@ -10,7 +10,7 @@ module MachineLearningWorkbench::Compressor
       @ncentrs = ncentrs
       @dtype = dtype
       @dims = Array(dims)
-      raise ArgumentError "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
+      raise ArgumentError, "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
       @lrate = lrate
       @vrange = case vrange
         when Array

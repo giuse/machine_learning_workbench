@@ -19,7 +19,7 @@ module MachineLearningWorkbench::Compressor
     end
 
     def train_one *args, **kwargs
-      raise NotImplementedError "Remember to overload this using the new lrate(idx)"
+      raise NotImplementedError, "Remember to overload this using the new lrate(idx)"
     end
 
   end

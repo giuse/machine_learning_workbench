@@ -29,7 +29,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     end
 
     def load data
-      raise ArgumentsigmaError unless data.size == 2
+      raise ArgumentError unless data.size == 2
       mu_ary, @variance = data
       @mu = NMatrix[*mu_ary, dtype: dtype]
       @sigma = id * variance
