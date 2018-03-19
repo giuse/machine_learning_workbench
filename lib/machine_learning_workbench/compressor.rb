@@ -1,1 +1,2 @@
 require_relative 'compressor/vector_quantization'
+require_relative 'compressor/online_vector_quantization'
