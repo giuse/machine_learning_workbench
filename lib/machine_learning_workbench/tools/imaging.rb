@@ -18,11 +18,12 @@ module MachineLearningWorkbench::Tools
     end
 
     # Show a NMatrix as image in a RMagick window
-    # @param disp_size the size of the image to display
-    # @param shape the true shape of the image (NMatrix could be flattened)
+    # @param disp_size [Array] the size of the image to display
+    # @param shape [Array] the true shape of the image (NMatrix could be flattened)
     # @param in_fork [bool] whether to execute the display in fork (and continue running)
-    def self.display nmat, disp_size: [300, 300], shape: nil, in_fork: true
-      img = nmat_to_img(nmat, shape: shape).resize(*disp_size)
+    def self.display nmat, disp_size: nil, shape: nil, in_fork: true
+      img = nmat_to_img nmat, shape: shape
+      img.resize!(*disp_size, Magick::TriangleFilter,0.51) if disp_size
       if in_fork
         MachineLearningWorkbench::Tools::Execution.in_fork { img.display }
       else

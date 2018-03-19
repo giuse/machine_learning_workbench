@@ -43,7 +43,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/machine_learning_workbench.
+Bug reports and pull requests are welcome on GitHub at https://github.com/giuse/machine_learning_workbench.
 
 ## License
 
