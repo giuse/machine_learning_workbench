@@ -5,5 +5,6 @@ require_relative 'optimizer/natural_evolution_strategies/base'
 require_relative 'optimizer/natural_evolution_strategies/xnes'
 require_relative 'optimizer/natural_evolution_strategies/snes'
 require_relative 'optimizer/natural_evolution_strategies/rnes'
-require_relative 'optimizer/natural_evolution_strategies/fnes'
+# FIX SPECS FIRST
+# require_relative 'optimizer/natural_evolution_strategies/fnes'
 require_relative 'optimizer/natural_evolution_strategies/bdnes'
