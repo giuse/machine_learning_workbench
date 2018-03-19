@@ -200,6 +200,11 @@ module MachineLearningWorkbench::NeuralNetwork
       lambda { |x| 1.7159 * Math.tanh(2.0*x/3.0) + 1e-3*x }
     end
 
+    # Rectified Linear Unit (ReLU)
+    def relu
+      lambda { |x| x>0 && x || 0 }
+    end
+
 
     # @!method interface_methods
     # Declaring interface methods - implement in child class!
