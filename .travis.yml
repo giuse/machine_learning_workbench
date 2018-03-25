@@ -5,5 +5,5 @@ rvm:
 addons:
   apt:
     packages:
-    - libatlas-base-dev
+    - libopenblas-base
 before_install: gem install bundler -v 1.16.0
