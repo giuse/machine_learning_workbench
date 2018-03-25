@@ -23,7 +23,7 @@ module MachineLearningWorkbench::NeuralNetwork
       previous = nlay     # index of previous layer (inputs)
       current = nlay + 1  # index of current layer (outputs)
       # Copy the level's last-time activation to the input (previous state)
-      # NOTE: ranges in NMatrix#[] not reliable! gotta loop :(
+      # TODO: ranges in `NArray#[]` should be reliable, get rid of loop
       nneurs(current).times do |i| # for each activations to copy
         # Copy output from last-time activation to recurrency in previous state
         @state[previous][0, nneurs(previous) + i] = state[current][0, i]

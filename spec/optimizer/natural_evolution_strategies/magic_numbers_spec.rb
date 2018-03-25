@@ -6,8 +6,8 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
 
     class TestNES < NES::Base
       def initialize_distribution **args
-        @mu = NMatrix.zeros([1,@ndims])
-        @sigma = NMatrix.identity(@ndims)
+        @mu = NArray.zeros [1, @ndims]
+        @sigma = NArray.eye @ndims
       end
     end
 
@@ -23,7 +23,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         expected.each do |n, exp|
           nes = TestNES.new(n, Proc.new{}, :min)
           nes.instance_eval("@popsize = n")
-          expect(nes.cmaes_utilities.approximates? NMatrix[exp]).to be_truthy
+          expect(nes.cmaes_utilities.approximates? NArray[exp]).to be_truthy
         end
       end
     end

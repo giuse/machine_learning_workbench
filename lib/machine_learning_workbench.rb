@@ -1,4 +1,20 @@
-require 'nmatrix'
+
+gpu = false             # prepare for switching to GPUs
+if gpu
+  require 'cumo/narray'
+  require 'cumo/linalg'
+  Xumo = Cumo
+else
+  require 'numo/narray'
+  require 'numo/linalg'
+  # currently required for Ubuntu 16.04
+  # depends on openblas: `sudo apt install libopenblas-base`
+  Fiddle.dlopen("/usr/lib/libopenblas.so")
+  Numo::Linalg::Lapack.dlopen("/usr/lib/liblapacke.so.3")
+  Xumo = Numo
+end
+NArray = Xumo::DFloat   # set a single data type across the WB for now
+NMath = Xumo::NMath     # shorthand for extended math module
 
 module MachineLearningWorkbench
   module Compressor

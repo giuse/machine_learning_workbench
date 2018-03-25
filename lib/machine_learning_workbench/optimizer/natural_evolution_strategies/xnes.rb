@@ -5,21 +5,35 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     attr_reader :log_sigma
 
     def initialize_distribution mu_init: 0, sigma_init: 1
-      @mu = NMatrix.new([1, ndims], mu_init, dtype: dtype)
-      sigma_init = [sigma_init]*ndims unless sigma_init.kind_of? Enumerable
-      @sigma = NMatrix.diag(sigma_init, dtype: dtype)
+      @mu = case mu_init
+        when Array
+          raise ArgumentError unless mu_init.size == ndims
+          NArray[mu_init]
+        when Numeric
+          NArray.new([1,ndims]).fill mu_init
+        else
+          raise ArgumentError, "Something is wrong with mu_init: #{mu_init}"
+      end
+      @sigma = case sigma_init
+      when Array
+        raise ArgumentError unless sigma_init.size == ndims
+        NArray[*sigma_init].diag
+      when Numeric
+        NArray.new([ndims]).fill(sigma_init).diag
+      else
+        raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}"
+      end
       # Works with the log of sigma to avoid continuous decompositions (thanks Sun Yi)
-      log_sigma_init = sigma_init.map &Math.method(:log)
-      @log_sigma = NMatrix.diag(log_sigma_init, dtype: dtype)
+      @log_sigma = Numo::NMath.log(sigma.diagonal).diag
     end
 
     def train picks: sorted_inds
       g_mu = utils.dot(picks)
-      g_log_sigma = popsize.times.inject(NMatrix.zeros_like sigma) do |sum, i|
+      g_log_sigma = popsize.times.inject(NArray.zeros sigma.shape) do |sum, i|
         u = utils[i]
-        ind = picks.row(i)
+        ind = picks[i, true]
         ind_sq = ind.outer_flat(ind, &:*)
-        sum + (ind_sq - id) * u
+        sum + (ind_sq - eye) * u
       end
       @mu += sigma.dot(g_mu.transpose).transpose * lrate
       @log_sigma += g_log_sigma * (lrate/2)
@@ -32,14 +46,12 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     end
 
     def save
-      [mu.to_consistent_a, log_sigma.to_consistent_a]
+      [mu.to_a, log_sigma.to_a]
     end
 
     def load data
       raise ArgumentError unless data.size == 2
-      mu_ary, log_sigma_ary = data
-      @mu = NMatrix[*mu_ary, dtype: dtype]
-      @log_sigma = NMatrix[*log_sigma_ary, dtype: dtype]
+      @mu, @log_sigma = data.map &:to_na
       @sigma = log_sigma.exponential
     end
   end

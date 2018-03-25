@@ -2,13 +2,12 @@ module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
   class VectorQuantization
-    attr_reader :ncentrs, :centrs, :dims, :vrange, :dtype, :lrate, :rng, :ntrains
+    attr_reader :ncentrs, :centrs, :dims, :vrange, :lrate, :rng, :ntrains
     Verification = MachineLearningWorkbench::Tools::Verification
 
-    def initialize ncentrs:, dims:, vrange:, dtype:, lrate:, rseed: Random.new_seed
+    def initialize ncentrs:, dims:, vrange:, lrate:, rseed: Random.new_seed
       @rng = Random.new rseed
       @ncentrs = ncentrs
-      @dtype = dtype
       @dims = Array(dims)
       check_lrate lrate # hack: so that we can overload it in online_vq
       @lrate = lrate
@@ -32,15 +31,13 @@ module MachineLearningWorkbench::Compressor
 
     # Creates a new (random) centroid
     def new_centr
-      # TODO: this is too slow, find another way to use the rng
-      # NMatrix.new(dims, dtype: dtype) { rng.rand Range.new *vrange }
-      NMatrix.random dims, dtype: dtype
+      NArray.new(*dims).rand(*vrange)
     end
 
     # Computes similarities between vector and all centroids
     def similarities vec
       raise NotImplementedError if vec.shape.size > 1
-      centrs.map { |c| c.dot(vec).first }
+      centrs.map { |c| c.dot(vec) }
       # require 'parallel'
       # Parallel.map(centrs) { |c| c.dot(vec).first }
     end
@@ -85,7 +82,7 @@ module MachineLearningWorkbench::Compressor
     end
 
     # Per-pixel errors in reconstructing vector
-    # @return [NMatrix] residuals
+    # @return [NArray] residuals
     def reconstr_error vec
       reconstruction(vec) - vec
     end

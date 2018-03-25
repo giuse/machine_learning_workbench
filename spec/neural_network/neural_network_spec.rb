@@ -12,10 +12,10 @@ RSpec.describe MachineLearningWorkbench::NeuralNetwork do
 
     it "#reset" do
       initial_state = [
-        NMatrix[[0,0,1]],
-        NMatrix[[0,0,1]],
-        NMatrix[[0]]]
-      altered_state = initial_state.collect {|m| m+1}
+        NArray[[0,0,1]],
+        NArray[[0,0,1]],
+        NArray[[0]]]
+      altered_state = initial_state.collect { |m| m+1 }
       net.instance_variable_set(:@state, altered_state)
       expect(net.state).not_to eq(initial_state)
       net.reset_state
