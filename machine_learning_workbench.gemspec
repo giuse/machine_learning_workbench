@@ -34,21 +34,18 @@ Gem::Specification.new do |spec|
 
   # Test
   spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rmagick"  # only used for one example
+  spec.add_development_dependency "rmagick"  # uhm would gladly drop this
 
   # Debug
   spec.add_development_dependency "pry", "~> 0.10"
   spec.add_development_dependency "pry-nav", "~> 0.2"
   spec.add_development_dependency "pry-rescue", "~> 1.4"
   spec.add_development_dependency "pry-stack_explorer", "~> 0.4"
+  spec.add_development_dependency "pry-doc", "~> 0.12"
 
   # Run
   spec.requirements << "libopenblas-base"  # library for following dependency
-  spec.add_dependency "numo-linalg"
+  spec.add_dependency "numo-narray", "~> 0.9"
+  spec.add_dependency "numo-linalg", "~> 0.1"
   spec.add_dependency "parallel", "~> 1.12"
-
-
-
-  # DELETEME
-  spec.add_dependency "nmatrix-atlas"
 end
