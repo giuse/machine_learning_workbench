@@ -4,7 +4,7 @@ IFS=$'\n\t'
 set -vx
 
 # ubuntu:
-sudo apt install libatlas-base-dev # for nmatrix
+sudo apt install libopenblas-base # for numo
 
 bundle install
 

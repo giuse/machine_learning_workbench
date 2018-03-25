@@ -217,12 +217,112 @@ module MachineLearningWorkbench::Monkey
       raise NotImplementedError, "There's no setter for the data pointer!"
     end
   end
+
+  module ToNArrayConvertible
+    def to_na
+      NArray[*self]
+    end
+  end
+
+  module NArrayOuterFlattable
+    # Flat-output generalized outer relationship. Same as `#outer`, but the
+    # result is a 2-dim matrix of the interactions between all the elements
+    # in `self` (as rows) and all the elements in `other` (as columns)
+    # @param other [NArray] other matrix
+    # @return [NArray]
+    def outer_flat other
+      # TODO: Numo::NArray should be able to implement this with `#outer` and some other
+      # function to flatten the right layer -- much faster
+      raise ArgumentError, "Need to pass an operand block" unless block_given?
+      self.class.zeros([self.size, other.size]).tap do |ret|
+        self.size.times do |r|
+          other.size.times do |c|
+            ret[r,c] = yield self[r], other[c]
+          end
+        end
+      end
+    end
+  end
+
+  module NArrayApproximatable
+    # Verifies if `self` and `other` are withing `epsilon` of each other.
+    # @param other [NArray]
+    # @param epsilon [NArray]
+    # @return [Boolean]
+    def approximates? other, epsilon=1e-5
+      ((self - other).abs < epsilon).all?
+    end
+  end
+
+  module Invertable
+    # Inverses matrix
+    # @return [NArray]
+    def invert
+      Numo::Linalg.inv self
+    end
+  end
+
+  module Exponentiable
+    # Matrix exponential: `e**self` (not to be confused with `self**n`)
+    # @return [NArray]
+    def exponential
+      raise ArgumentError if ndim > 2
+      # special case: one-dimensional matrix: just exponentiate the values
+      return Numo::NMath.exp(self) if (ndim == 1) || shape.include?(1)
+      # at this point we need to validate it is a square matrix
+      raise ArgumentError unless shape.reduce(&:==)
+
+      # Eigenvalue decomposition method from `scipy/linalg/matfuncs.py#expm2` (deprecated)
+      # https://github.com/scipy/scipy/commit/236e0740ba951cb455ba8b6a306abb32740131cf
+      # s, vr = eig(A)
+      # vri = inv(vr)
+      # r = dot(dot(vr, diag(exp(s))), vri)
+
+      # TODO: this is a simple but outdated method, switch to Pade approximation
+      # https://github.com/scipy/scipy/blob/11509c4a98edded6c59423ac44ca1b7f28fba1fd/scipy/sparse/linalg/matfuncs.py#L557
+
+      # e_values, l_e_vectors, r_e_vectors_t = Numo::Linalg.svd self
+      evals, _wi, _vl, r_evecs = Numo::Linalg::Lapack.call(:geev, self, jobvl: false, jobvr: true)
+      r_evecs_t = r_evecs#.transpose
+      r_evecs_inv = r_evecs_t.invert
+      evals_exp_dmat = Numo::NMath.exp(evals).diag
+
+      # l_e_vectors.dot(e_vals_exp_dmat).dot(l_e_vectors.invert)#.transpose
+      r_evecs_t.dot(evals_exp_dmat).dot(r_evecs_inv)
+    end
+  end
+
+  module Mappable
+    # Maps along a NArray dimension, and returns NArray
+    # @return [NArray]
+    # NOTE: this indexing is not consistent with NArray, which uses 0 to indicate
+    #   columns rather than the 0th dimension (rows)
+    def map dim=0
+      raise ArgumentError unless dim.kind_of?(Integer) && dim.between?(0,ndim)
+      # TODO: return iterator instead of raise
+      raise NotImplementedError unless block_given?
+      indices = [true]*ndim
+      ret = []
+      shape[dim].times.each do |i|
+        indices[dim] = i
+        ret << yield(self[*indices])
+      end
+      self.class[*ret]
+    end
+  end
+
 end
 
 Array.include MachineLearningWorkbench::Monkey::Dimensionable
-NMatrix.extend MachineLearningWorkbench::Monkey::Buildable
-require 'nmatrix/lapack_plugin' # loads whichever is installed between atlas and lapacke
-NMatrix.include MachineLearningWorkbench::Monkey::AdvancelyOperationable
+# NMatrix.extend MachineLearningWorkbench::Monkey::Buildable
+# require 'nmatrix/lapack_plugin' # loads whichever is installed between atlas and lapacke
+# NMatrix.include MachineLearningWorkbench::Monkey::AdvancelyOperationable
 Numeric.include MachineLearningWorkbench::Monkey::NumericallyApproximatable
-NMatrix.include MachineLearningWorkbench::Monkey::MatrixApproximatable
-NMatrix.include MachineLearningWorkbench::Monkey::CPtrDumpable
+# NMatrix.include MachineLearningWorkbench::Monkey::MatrixApproximatable
+# NMatrix.include MachineLearningWorkbench::Monkey::CPtrDumpable
+Array.include MachineLearningWorkbench::Monkey::ToNArrayConvertible
+NArray.include MachineLearningWorkbench::Monkey::NArrayApproximatable
+NArray.include MachineLearningWorkbench::Monkey::NArrayOuterFlattable
+NArray.include MachineLearningWorkbench::Monkey::Exponentiable
+NArray.include MachineLearningWorkbench::Monkey::Invertable
+NArray.prepend MachineLearningWorkbench::Monkey::Mappable

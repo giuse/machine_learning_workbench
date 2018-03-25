@@ -5,9 +5,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   ndims_lst = [3,2]  # BDNES
   obj_fns = {
     # MINIMIZATION: upper parabolic with minimum in [0]*ndims
-    min: -> (ind) { ind.inject(0) { |mem,var| mem + var**2 } },
+    min: -> (ind) { (ind**2).sum },
     # MAXIMIZATION: lower parabolic with maximum in [0]*ndims
-    max: -> (ind) { ind.inject(0) { |mem,var| mem - var**2 } }
+    max: -> (ind) { -(ind**2).sum }
   }
   opt_types=obj_fns.keys
   one_opt_type = opt_types.first
@@ -32,7 +32,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         context "within #{ntrains} iterations" do
           it "optimizes the negative squares function" do
             ntrains.times { nes.train }
-            expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+            expect(nes.mu.approximates? 0).to be_truthy
             expect(nes.convergence.approximates? 0).to be_truthy
           end
         end
@@ -45,7 +45,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         context "within #{ntrains} iterations" do
           it "optimizes the negative squares function" do
             ntrains.times { nes.train }
-            expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+            expect(nes.mu.approximates? 0).to be_truthy
             expect(nes.convergence.approximates? 0).to be_truthy
           end
         end
@@ -97,7 +97,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end
@@ -110,7 +110,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end
@@ -136,7 +136,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end
@@ -149,7 +149,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end
@@ -176,7 +176,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   #     context "within #{ntrains} iterations" do
   #       it "optimizes the negative squares function" do
   #         ntrains.times { nes.train }
-  #         expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+  #         expect(nes.mu.approximates? 0).to be_truthy
   #         expect(nes.convergence).to eq(1)
   #       end
   #     end
@@ -190,7 +190,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end
@@ -203,7 +203,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
       context "within #{ntrains} iterations" do
         it "optimizes the negative squares function" do
           ntrains.times { nes.train }
-          expect(nes.mu.all? { |v| v.approximates? 0 }).to be_truthy
+          expect(nes.mu.approximates? 0).to be_truthy
           expect(nes.convergence.approximates? 0).to be_truthy
         end
       end

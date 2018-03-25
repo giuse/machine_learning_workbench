@@ -2,7 +2,7 @@
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Natural Evolution Strategies base class
   class Base
-    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :id, :rng, :last_fits, :best, :rescale_popsize, :rescale_lrate, :dtype
+    attr_reader :ndims, :mu, :sigma, :opt_type, :obj_fn, :parallel_fit, :eye, :rng, :last_fits, :best, :rescale_popsize, :rescale_lrate
 
     # NES object initialization
     # @param ndims [Integer] number of parameters to optimize
@@ -19,24 +19,23 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     #   a single instance.
     # @param rescale_popsize [Float] scaling for the default population size
     # @param rescale_lrate [Float] scaling for the default learning rate
-    # @param dtype [NMatrix dtype] NMatrix dtype for all matrix computation
-    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1, dtype: :float64
+    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1
       raise ArgumentError unless [:min, :max].include? opt_type
       raise ArgumentError unless obj_fn.respond_to? :call
       @ndims, @opt_type, @obj_fn, @parallel_fit = ndims, opt_type, obj_fn, parallel_fit
       @rescale_popsize, @rescale_lrate = rescale_popsize, rescale_lrate
-      @id = NMatrix.identity(ndims, dtype: dtype)
+      @eye = NArray.eye(ndims)
       rseed ||= Random.new_seed
       # puts "NES rseed: #{s}"  # currently disabled
       @rng = Random.new rseed
       @best = [(opt_type==:max ? -1 : 1) * Float::INFINITY, nil]
       @last_fits = []
-      @dtype = dtype
       initialize_distribution mu_init: mu_init, sigma_init: sigma_init
     end
 
     # Box-Muller transform: generates standard (unit) normal distribution samples
     # @return [Float] a single sample from a standard normal distribution
+    # @note Numo::NArray implements this :) glad to have switched!
     def standard_normal_sample
       rho = Math.sqrt(-2.0 * Math.log(rng.rand))
       theta = 2 * Math::PI * rng.rand
@@ -53,7 +52,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def lrate;   @lrate     ||= cmaes_lrate * rescale_lrate end
 
     # Magic numbers from CMA-ES (TODO: add proper citation)
-    # @return [NMatrix] scale-invariant utilities
+    # @return [NArray] scale-invariant utilities
     def cmaes_utilities
       # Algorithm equations are meant for fitness maximization
       # Match utilities with individuals sorted by INCREASING fitness
@@ -63,7 +62,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       total = log_range.reduce(:+)
       buf = 1.0/popsize
       vals = log_range.collect { |v| v / total - buf }.reverse
-      NMatrix[vals, dtype: dtype]
+      NArray[vals]
     end
 
     # (see #cmaes_utilities)
@@ -78,21 +77,26 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       [5, 4 + (3*Math.log(ndims)).floor].max
     end
 
-    # Samples a standard normal distribution to construct a NMatrix of
+    # Samples a standard normal distribution to construct a NArray of
     #   popsize multivariate samples of length ndims
-    # @return [NMatrix] standard normal samples
+    # @return [NArray] standard normal samples
+    # @note Numo::NArray implements this :) glad to have switched!
     def standard_normal_samples
-      NMatrix.new([popsize, ndims], dtype: dtype) { standard_normal_sample }
+      NArray.zeros([popsize, ndims]).tap do |ret|
+        ret.each_with_index { |_,*i| ret[*i] = standard_normal_sample }
+      end
     end
 
     # Move standard normal samples to current distribution
-    # @return [NMatrix] individuals
+    # @return [NArray] individuals
     def move_inds inds
       # TODO: can we reduce the transpositions?
-      # sigma.dot(inds.transpose).map(&mu.method(:+)).transpose
-      multi_mu = NMatrix[*inds.rows.times.collect {mu.to_a}, dtype: dtype].transpose
-      (multi_mu + sigma.dot(inds.transpose)).transpose
-      # sigma.dot(inds.transpose).transpose + inds.rows.times.collect {mu.to_a}.to_nm
+
+      # multi_mu = NMatrix[*inds.rows.times.collect {mu.to_a}, dtype: dtype].transpose
+      # (multi_mu + sigma.dot(inds.transpose)).transpose
+
+      mu_tile = mu.tile(inds.shape.first, 1).transpose
+      (mu_tile + sigma.dot(inds.transpose)).transpose
     end
 
     # Sorted individuals
@@ -100,18 +104,27 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # matched with individuals sorted by INCREASING fitness. Then reverse order for minimization.
     # @return standard normal samples sorted by the respective individuals' fitnesses
     def sorted_inds
-      samples = standard_normal_samples
-      inds = move_inds(samples).to_a
+      # samples = standard_normal_samples # Numo::NArray implements the Box-Muller :)
+      samples = NArray.new([popsize, ndims]).rand_norm(0,1)
+      inds = move_inds(samples)
       fits = parallel_fit ? obj_fn.call(inds) : inds.map(&obj_fn)
       # Quick cure for NaN fitnesses
-      fits.map! { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
+      fits.map { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
       @last_fits = fits # allows checking for stagnation
-      sorted = [fits, inds, samples.to_a].transpose.sort_by(&:first)
-      sorted.reverse! if opt_type==:min
-      this_best = sorted.last.take(2)
+
+      # sorted = [fits.to_a, inds, samples.to_a].transpose.sort_by(&:first)
+      # sorted.reverse! if opt_type==:min
+      # this_best = sorted.last.take(2)
+      # NArray[*sorted.map(&:last)]
+
+      sort_idxs = fits.sort_index
+      sort_idxs = sort_idxs.reverse if opt_type == :min
+      this_best = [fits[sort_idxs[-1]], inds[sort_idxs[-1]]]
+
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
-      NMatrix[*sorted.map(&:last), dtype: dtype]
+
+      samples[sort_idxs,true]
     end
 
     # @!method interface_methods

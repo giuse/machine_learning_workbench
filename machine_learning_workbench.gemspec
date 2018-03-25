@@ -9,8 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = "giuseppe.cuccu@gmail.com"
 
   spec.summary       = %q[Workbench for practical machine learning in Ruby.]
-  spec.description   = %q[\
-    This workbench holds a collection of machine learning
+  spec.description   = %q[This workbench holds a collection of machine learning
     methods in Ruby. Rather than specializing on a single task or method, this
     gem aims at providing an encompassing framework for any machine learning
     application.].gsub('  ', '')
@@ -44,7 +43,12 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "pry-stack_explorer", "~> 0.4"
 
   # Run
-  spec.requirements << "libatlas-base-dev"  # library for following dependency
-  spec.add_dependency "nmatrix-atlas", "~> 0.2"
+  spec.requirements << "libopenblas-base"  # library for following dependency
+  spec.add_dependency "numo-linalg"
   spec.add_dependency "parallel", "~> 1.12"
+
+
+
+  # DELETEME
+  spec.add_dependency "nmatrix-atlas"
 end

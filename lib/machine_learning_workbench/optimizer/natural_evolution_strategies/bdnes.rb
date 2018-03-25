@@ -46,8 +46,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       end.transpose
 
       # Join the individuals for evaluation
-      full_inds = inds_lst.reduce(&:hconcat).to_a
-      # Need to fix samples dimensions for sorting
+      full_inds = inds_lst.reduce { |mem, var| mem.concatenate var, axis: 1 }
+      # Need to fix sample dimensions for sorting
       # - current dims: nblocks x ninds x [block sizes]
       # - for sorting: ninds x nblocks x [block sizes]
       full_samples = samples_lst.transpose
@@ -55,24 +55,30 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       # Evaluate fitness of complete individuals
       fits = parallel_fit ? obj_fn.call(full_inds) : full_inds.map(&obj_fn)
       # Quick cure for NaN fitnesses
-      fits.map! { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
+      fits.map { |x| x.nan? ? (opt_type==:max ? -1 : 1) * Float::INFINITY : x }
       @last_fits = fits # allows checking for stagnation
 
       # Sort inds based on fit and opt_type, save best
-      sorted = [fits, full_inds, full_samples].transpose.sort_by(&:first)
-      sorted.reverse! if opt_type==:min
-      this_best = sorted.last.take(2)
+      # sorted = [fits, full_inds, full_samples].transpose.sort_by(&:first)
+      # sorted.reverse! if opt_type==:min
+      # this_best = sorted.last.take(2)
+      # opt_cmp_fn = opt_type==:min ? :< : :>
+      # @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
+      # sorted_samples = sorted.map(&:last)
+      sort_idxs = fits.sort_index
+      sort_idxs = sort_idxs.reverse if opt_type == :min
+      this_best = [fits[sort_idxs[-1]], full_inds[sort_idxs[-1]]]
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
-      sorted_samples = sorted.map(&:last)
+      sorted_samples = full_samples.values_at *sort_idxs
 
       # Need to bring back sample dimensions for each block
       # - current dims: ninds x nblocks x [block sizes]
       # - target blocks list: nblocks x ninds x [block sizes]
       block_samples = sorted_samples.transpose
 
-      # then back to NMatrix for usage in training
-      block_samples.map { |sample| NMatrix[*sample, dtype: dtype] }
+      # then back to NArray for usage in training
+      block_samples.map &:to_na
     end
 
     # duck-type the interface: [:train, :mu, :convergence, :save, :load]
@@ -84,7 +90,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     end
 
     def mu
-      blocks.map(&:mu).reduce(&:hconcat)
+      blocks.map(&:mu).reduce { |mem, var| mem.concatenate var, axis: 1 }
     end
 
     def convergence

@@ -5,25 +5,25 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   describe :inds do
 
     context "when sorted by fitness" do
-      fit = lambda { |ind| ind.reduce :+ }
+      fit = lambda { |ind| ind.sum }
 
       context "with artificial inds" do
-        inds = $global_inds = [[7,8,9], [1,2,3], [4,5,6]]
+        inds = [[7,8,9], [1,2,3], [4,5,6]]
         a,b,c = inds
         max_sort = [b,c,a]
         min_sort = max_sort.reverse
 
         class TestNES < NES::Base
           def initialize_distribution mu_init: nil, sigma_init: nil
-            @id = NMatrix.identity(@ndims)
-            @mu = NMatrix.zeros([1,@ndims])
-            @sigma = @id.dup
-            @popsize = $global_inds.size
+            @eye = NArray.eye(@ndims)
+            @mu = NArray.zeros([1,@ndims])
+            @sigma = @eye.copy
+            @popsize = 3 # must match with `inds` declared above
           end
         end
 
         nes = TestNES.new(inds.first.size, fit, :min)
-        nes.instance_eval("def standard_normal_samples; NMatrix[*#{inds}] end")
+        nes.instance_eval("def standard_normal_samples; NArray[*#{inds}] end")
 
         it "minimization" do
           expect(nes.sorted_inds.to_a).to eq(min_sort)
@@ -49,9 +49,9 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         max_sort = inds.values_at *max_idx
         min_sort = max_sort.reverse
         # fix the sampling to last sample
-        nes.instance_eval("def standard_normal_samples; NMatrix[*#{inds}] end")
+        nes.instance_eval("def standard_normal_samples; NArray[*#{inds}] end")
         # fix the sigma not to alter the ind
-        nes.instance_eval("@sigma = @id.dup")
+        nes.instance_eval("@sigma = @eye.copy")
 
         it "minimization" do
           expect(nes.sorted_inds.to_a).to eq(min_sort)
