@@ -46,6 +46,6 @@ Gem::Specification.new do |spec|
   # Run
   spec.requirements << "libopenblas-base"  # library for following dependency
   spec.add_dependency "numo-narray", "~> 0.9"
-  spec.add_dependency "numo-linalg", "~> 0.1"
+  spec.add_dependency "numo-linalg", "~> 0.1.2"
   spec.add_dependency "parallel", "~> 1.12"
 end
