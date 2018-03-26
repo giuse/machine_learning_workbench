@@ -6,11 +6,7 @@ if gpu
   Xumo = Cumo
 else
   require 'numo/narray'
-  require 'numo/linalg'
-  # currently required for Ubuntu 16.04
-  # depends on openblas: `sudo apt install libopenblas-base`
-  Fiddle.dlopen("/usr/lib/libopenblas.so")
-  Numo::Linalg::Lapack.dlopen("/usr/lib/liblapacke.so.3")
+  require 'numo/linalg'  # depends on openblas: `sudo apt install libopenblas-base`
   Xumo = Numo
 end
 NArray = Xumo::DFloat   # set a single data type across the WB for now
