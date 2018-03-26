@@ -44,16 +44,15 @@ module MachineLearningWorkbench::NeuralNetwork
     def reset_state
       state.each do |s|
         s.fill 0           # reset state to zero
-        s[0,-1] = 1        # add bias
+        s[-1] = 1        # add bias
       end
-      state[-1][0,-1] = 0  # last layer has no bias
+      state[-1][-1] = 0  # last layer has no bias
     end
 
     # Initialize the network with random weights
     def init_random
-      # Will only be used for testing, no sense optimizing it now (NArray#rand)
       # Reusing `#load_weights` instead helps catching bugs
-      load_weights nweights.times.collect { rand(-1.0..1.0) }
+      load_weights NArray.new(nweights).rand(-1,1)
     end
 
     ## Weight utilities
@@ -88,10 +87,9 @@ module MachineLearningWorkbench::NeuralNetwork
     end
 
     # Returns the weight matrix
-    # @return [Array] three-dimensional Array of weights: a list of weight
-    #   matrices, one for each layer.
+    # @return [Array<NArray>] list of NArray matrices of weights (one per layer).
     def weights
-      layers.collect(&:to_a)
+      layers
     end
 
     # Number of neurons per layer. Although this implementation includes inputs
@@ -126,12 +124,13 @@ module MachineLearningWorkbench::NeuralNetwork
     #   all goes well there's nothing to return but a confirmation to the caller.
     def load_weights weights
       raise ArgumentError unless weights.size == nweights
-      weights_iter = weights.each
-      @layers ||= layer_shapes.collect { |shape| NArray.zeros shape }
-      layers.each do |narr|
-        narr.each_with_index do |_val, *idxs|
-          narr[*idxs] = weights_iter.next
-        end
+      weights = weights.to_na unless weights.kind_of? NArray
+      from = 0
+      @layers = layer_shapes.collect do |shape|
+        to = from + shape.reduce(:*)
+        lay_w = weights[from...to].reshape *shape
+        from = to
+        lay_w
       end
       reset_state
       return true
@@ -145,24 +144,21 @@ module MachineLearningWorkbench::NeuralNetwork
     # @return [Array] the activation of the output layer
     def activate input
       raise ArgumentError unless input.size == struct.first
-      raise ArgumentError unless input.is_a? Array
       # load input in first state
-      @state[0][0, 0..-2] = input
+      state[0][0...struct.first] = input
       # activate layers in sequence
       nlayers.times.each do |i|
         act = activate_layer i
-        @state[i+1][0, 0...act.size] = act
+        state[i+1][0...act.size] = act
       end
       return out
     end
 
     # Extract and convert the output layer's activation
-    # @return [Array] the activation of the output layer as 1-dim Array
+    # @return [NArray] the activation of the output layer
     def out
-      state.last.to_a.flatten
+      state.last
     end
-
-    # define #activate_layer in child class
 
     ## Activation functions
 
@@ -170,27 +166,27 @@ module MachineLearningWorkbench::NeuralNetwork
     def sigmoid k=0.5
       # k is steepness:  0<k<1 is flatter, 1<k is flatter
       # flatter makes activation less sensitive, better with large number of inputs
-      lambda { |x| 1.0 / (Numo::NMath.exp(-k * x) + 1.0) }
+      -> (x) { 1.0 / (Numo::NMath.exp(-k * x) + 1.0) }
     end
 
     # Traditional logistic
     def logistic
-      lambda { |x|
+      -> (x) do
         exp = Numo::NMath.exp(x)
         # exp.infinite? ? exp : exp / (1.0 + exp)
         exp / (1.0 + exp)
-      }
+      end
     end
 
     # LeCun hyperbolic activation
     # @see http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf Section 4.4
     def lecun_hyperbolic
-      lambda { |x| 1.7159 * Numo::NMath.tanh(2.0*x/3.0) + 1e-3*x }
+      -> (x) { 1.7159 * Numo::NMath.tanh(2.0*x/3.0) + 1e-3*x }
     end
 
     # Rectified Linear Unit (ReLU)
     def relu
-      lambda { |x| (x>0).all? && x || x.class.zeros(x.shape) }
+      -> (x) { (x>0).all? && x || x.class.zeros(x.shape) }
     end
 
 

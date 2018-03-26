@@ -1,8 +1,8 @@
 
 
 RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies do
-  NES = MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   describe "magic numbers" do
+    NES = MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     class TestNES < NES::Base
       def initialize_distribution **args

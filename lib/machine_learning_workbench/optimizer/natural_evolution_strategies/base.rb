@@ -119,7 +119,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
       sort_idxs = fits.sort_index
       sort_idxs = sort_idxs.reverse if opt_type == :min
-      this_best = [fits[sort_idxs[-1]], inds[sort_idxs[-1]]]
+      this_best = [fits[sort_idxs[-1]], inds[sort_idxs[-1], true]]
 
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)

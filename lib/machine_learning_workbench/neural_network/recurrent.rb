@@ -14,21 +14,29 @@ module MachineLearningWorkbench::NeuralNetwork
       end
     end
 
+      # # NOTE: current layer index corresponds to index of next state!
+      # previous = nlay     # index of previous layer (inputs)
+      # current = nlay + 1  # index of current layer (outputs)
+      # # Copy the level's last-time activation to the input (previous state)
+      # # TODO: ranges in `NArray#[]` should be reliable, get rid of loop
+      # nneurs(current).times do |i| # for each activations to copy
+      #   # Copy output from last-time activation to recurrency in previous state
+      #   @state[previous][0, nneurs(previous) + i] = state[current][0, i]
+      # end
+      # act_fn.call state[previous].dot layers[nlay]
+
     # Activates a layer of the network.
     # Bit more complex since it has to copy the layer's activation on
     # last input to its own inputs, for recursion.
     # @param i [Integer] the layer to activate, zero-indexed
-    def activate_layer nlay #_layer
-      # NOTE: current layer index corresponds to index of next state!
-      previous = nlay     # index of previous layer (inputs)
-      current = nlay + 1  # index of current layer (outputs)
-      # Copy the level's last-time activation to the input (previous state)
-      # TODO: ranges in `NArray#[]` should be reliable, get rid of loop
-      nneurs(current).times do |i| # for each activations to copy
-        # Copy output from last-time activation to recurrency in previous state
-        @state[previous][0, nneurs(previous) + i] = state[current][0, i]
-      end
-      act_fn.call state[previous].dot layers[nlay]
+    def activate_layer nlay
+      # Mark begin and end of recursion outputs in current state
+      begin_recur = nneurs(nlay)
+      end_recur = nneurs(nlay) + nneurs(nlay+1)
+      # Copy the level's last-time activation to the current input recurrency
+      state[nlay][begin_recur...end_recur] = state[nlay+1][0...nneurs(nlay+1)]
+      # Activate current layer
+      act_fn.call state[nlay].dot layers[nlay]
     end
 
   end
