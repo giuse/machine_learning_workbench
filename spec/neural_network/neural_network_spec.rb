@@ -54,7 +54,7 @@ RSpec.describe MachineLearningWorkbench::NeuralNetwork do
       end
 
       it "#nweights correctly counts the weights" do
-        expect(net.nweights).to eq(net.weights.flatten.size)
+        expect(net.nweights).to eq(net.weights.map(&:to_a).flatten.size)
       end
     end
 
@@ -78,7 +78,7 @@ RSpec.describe MachineLearningWorkbench::NeuralNetwork do
         net.load_weights solution_weights.flatten
         expect(net.weights).to eq(solution_weights)
         xor_table.each do |input, target|
-          expect(net.activate(input).first.approximates? target).to be_truthy
+          expect(net.activate(input)[0].approximates? target).to be_truthy
         end
       end
     end
@@ -90,7 +90,7 @@ RSpec.describe MachineLearningWorkbench::NeuralNetwork do
 	    net.init_random
 
 	    it "#nweights and #weights correspond" do
-	      expect(net.nweights).to eq(net.weights.flatten.size)
+        expect(net.nweights).to eq(net.weights.map(&:to_a).flatten.size)
 	    end
 
 	    it "#layer_shapes" do
