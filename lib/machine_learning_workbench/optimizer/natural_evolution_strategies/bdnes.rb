@@ -5,8 +5,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     MAX_RSEED = 10**Random.new_seed.size # same range as Random.new_seed
 
-    attr_reader :ndims_lst, :obj_fn, :opt_type, :parallel_fit, :blocks, :popsize, :rng,
-      :best, :last_fits
+    attr_reader :ndims_lst, :blocks, :popsize
 
     # Initialize a list of XNES, one for each block
     # see class `Base` for the description of the rest of the arguments.
@@ -67,7 +66,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       # sorted_samples = sorted.map(&:last)
       sort_idxs = fits.sort_index
       sort_idxs = sort_idxs.reverse if opt_type == :min
-      this_best = [fits[sort_idxs[-1]], full_inds[sort_idxs[-1]]]
+      this_best = [fits[sort_idxs[-1]], full_inds[sort_idxs[-1], true]]
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
       sorted_samples = full_samples.values_at *sort_idxs
