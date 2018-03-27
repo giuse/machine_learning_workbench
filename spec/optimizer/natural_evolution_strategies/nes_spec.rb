@@ -11,7 +11,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
   }
   opt_types=obj_fns.keys
   one_opt_type = opt_types.first
-  ntrains = 180
+  ntrains = 200
 
   describe NES::XNES do
 
@@ -80,12 +80,16 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         run_4_resumed_new = nes_new.save
         expect(run_4_straight).not_to eq(run_4_resumed_new)
 
-        # If instead I use a nes with same rseed and same number of rand
-        # calls, even though I trash the dist info, it yields the same result
-        nes.load run_2_only
-        2.times { nes.train }
-        run_4_resumed = nes.save
-        expect(run_4_straight).to eq(run_4_resumed)
+        # TODO: reactivate the test below after `Numo::NArray#rand_norm` accepts
+        # a random seed as input, for the moment we're giving up on this in
+        # exchange for performance.
+
+        # # If instead I use a nes with same rseed and same number of rand
+        # # calls, even though I trash the dist info, it yields the same result
+        # nes.load run_2_only
+        # 2.times { nes.train }
+        # run_4_resumed = nes.save
+        # expect(run_4_straight).to eq(run_4_resumed)
       end
     end
   end
