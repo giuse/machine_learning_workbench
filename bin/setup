@@ -4,7 +4,7 @@ IFS=$'\n\t'
 set -vx
 
 # ubuntu:
-sudo apt install libopenblas-base # for numo
+sudo apt install libopenblas-base liblapacke # for numo-linalg
 
 bundle install
 
