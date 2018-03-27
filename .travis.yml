@@ -6,4 +6,5 @@ addons:
   apt:
     packages:
     - libopenblas-base
+    - liblapacke
 before_install: gem install bundler -v 1.16.0

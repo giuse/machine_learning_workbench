@@ -6,7 +6,9 @@ if gpu
   Xumo = Cumo
 else
   require 'numo/narray'
-  require 'numo/linalg'  # depends on openblas: `sudo apt install libopenblas-base`
+  # gem `numo-linalg` depends on openblas and lapacke:
+  # `sudo apt install libopenblas-base liblapacke`
+  require 'numo/linalg'
   Xumo = Numo
 end
 NArray = Xumo::DFloat   # set a single data type across the WB for now
