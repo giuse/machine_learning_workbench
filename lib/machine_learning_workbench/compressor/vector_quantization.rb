@@ -2,15 +2,18 @@ module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
   class VectorQuantization
-    attr_reader :ncentrs, :centrs, :dims, :vrange, :lrate, :rng, :ntrains
+    attr_reader :ncentrs, :centrs, :dims, :vrange, :init_centr_vrange, :lrate, :simil_type, :rng, :ntrains
     Verification = MachineLearningWorkbench::Tools::Verification
 
-    def initialize ncentrs:, dims:, vrange:, lrate:, rseed: Random.new_seed
+    def initialize ncentrs:, dims:, vrange:, lrate:, simil_type: nil, init_centr_vrange: nil, rseed: Random.new_seed
+      # TODO: RNG CURRENTLY NOT USED!!
       @rng = Random.new rseed
       @ncentrs = ncentrs
       @dims = Array(dims)
       check_lrate lrate # hack: so that we can overload it in online_vq
       @lrate = lrate
+      @simil_type = simil_type || :dot
+      @init_centr_vrange ||= vrange
       @vrange = case vrange
         when Array
           raise ArgumentError, "vrange size not 2: #{vrange}" unless vrange.size == 2
@@ -19,30 +22,48 @@ module MachineLearningWorkbench::Compressor
           [vrange.first, vrange.last].map &method(:Float)
         else raise ArgumentError, "vrange: unrecognized type: #{vrange.class}"
       end
-      @centrs = ncentrs.times.map { new_centr }
+      init_centrs
       @ntrains = [0]*ncentrs # useful to understand what happens
     end
 
     # Verify lrate to be present and withing unit bounds
-    # As a separate method only so it can be overloaded in online_vq
+    # As a separate method only so it can be overloaded in `OnlineVectorQuantization`
     def check_lrate lrate
       raise ArgumentError, "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
     end
 
-    # Creates a new (random) centroid
-    def new_centr
-      NArray.new(*dims).rand(*vrange)
+    # Initializes a list of centroids
+    def init_centrs nc: ncentrs, base: nil, proport: nil
+      @centrs = nc.times.map { new_centr base, proport }
     end
 
+    # Creates a new (random) centroid
+    # If a base is passed, this is meshed with the random centroid.
+    # This is done to facilitate distributing the training across centroids.
+    # TODO: USE RNG HERE!!
+    def new_centr base=nil, proport=nil
+      raise ArgumentError, "Either both or none" if base.nil? ^ proport.nil?
+      # require 'pry'; binding.pry if base.nil? ^ proport.nil?
+      ret = NArray.new(*dims).rand(*init_centr_vrange)
+      ret = ret * (1-proport) + base * proport if base&&proport
+      ret
+    end
+
+    SIMIL = {
+      dot: -> (centr, vec) { centr.dot(vec) },
+      mse: -> (centr, vec) { -((centr-vec)**2).sum / centr.size }
+    }
+
     # Computes similarities between vector and all centroids
-    def similarities vec
+    def similarities vec, type: simil_type
       raise NotImplementedError if vec.shape.size > 1
-      centrs.map { |c| c.dot(vec) }
+      centrs.map { |centr| SIMIL[type].call centr, vec }
       # require 'parallel'
       # Parallel.map(centrs) { |c| c.dot(vec).first }
     end
 
     # Encode a vector
+    # TODO: optimize for Numo
     def encode vec, type: :most_similar
       simils = similarities vec
       case type
@@ -52,6 +73,7 @@ module MachineLearningWorkbench::Compressor
         simils
       when :ensemble_norm
         tot = simils.reduce(:+)
+        tot = 1 if tot == 0  # HACK: avoid division by zero
         simils.map { |s| s/tot }
       else raise ArgumentError, "unrecognized encode type: #{type}"
       end
@@ -83,19 +105,18 @@ module MachineLearningWorkbench::Compressor
 
     # Per-pixel errors in reconstructing vector
     # @return [NArray] residuals
-    def reconstr_error vec
-      reconstruction(vec) - vec
+    def reconstr_error vec, code: nil, type: :most_similar
+      code ||= encode vec, type: type
+      (vec - reconstruction(code, type: type)).abs.sum
     end
 
     # Train on one vector
     # @return [Integer] index of trained centroid
     def train_one vec
-
       trg_idx, _simil = most_similar_centr(vec)
-      # note: uhm that actually looks like a dot product... optimizable?
+      # note: uhm that actually looks like a dot product... maybe faster?
       #   `[c[i], vec].dot([1-lrate, lrate])`
       centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
-      # Verification.in_range! centrs[trg_idx], vrange # I verified it's not needed
       trg_idx
     end
 

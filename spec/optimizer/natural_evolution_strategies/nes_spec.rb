@@ -80,7 +80,7 @@ RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies d
         run_4_resumed_new = nes_new.save
         expect(run_4_straight).not_to eq(run_4_resumed_new)
 
-        # TODO: reactivate the test below after `Numo::NArray#rand_norm` accepts
+        # TODO: reactivate the test below after `Xumo::NArray#rand_norm` accepts
         # a random seed as input, for the moment we're giving up on this in
         # exchange for performance.
 

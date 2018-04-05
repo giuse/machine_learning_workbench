@@ -7,10 +7,11 @@ module MachineLearningWorkbench::Tools
     # @param narr [NArray] numeric matrix to display
     # @param shape [Array<Integer>] optional reshaping
     def self.narr_to_img narr, shape: nil
+      require 'rmagick'
       shape ||= narr.shape
       shape = [1, shape] if shape.kind_of?(Integer) || shape.size == 1
       # `Image::constitute` requires Float pixels to be in [0,1]
-      pixels = Norm.feature_scaling narr, to: [0,1]
+      pixels = Norm.feature_scaling narr.cast_to(NArray), to: [0,1]
       Magick::Image.constitute *shape, "I", pixels.to_a.flatten
     end
 
@@ -28,6 +29,7 @@ module MachineLearningWorkbench::Tools
     # @param shape [Array] the true shape of the image (numeric matrix could be flattened)
     # @param in_fork [bool] whether to execute the display in fork (and continue running)
     def self.display narr, disp_size: nil, shape: nil, in_fork: true
+      require 'rmagick'
       img = narr_to_img narr, shape: shape
       img.resize!(*disp_size, Magick::TriangleFilter,0.51) if disp_size
       if in_fork
@@ -43,6 +45,7 @@ module MachineLearningWorkbench::Tools
     # @param flat [bool] whether to return a flat array
     # @param dtype dtype for the numeric matrix, leave `nil` for automatic detection
     def self.narr_from_png fname, scale: nil, flat: false
+      require 'rmagick'
       img = Magick::ImageList.new(fname).first
       img.scale!(scale) if scale
       shape = [img.columns, img.rows]

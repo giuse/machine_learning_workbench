@@ -231,7 +231,7 @@ module MachineLearningWorkbench::Monkey
     # @param other [NArray] other matrix
     # @return [NArray]
     def outer_flat other
-      # TODO: Numo::NArray should be able to implement this with `#outer` and some other
+      # TODO: Xumo::NArray should be able to implement this with `#outer` and some other
       # function to flatten the right layer -- much faster
       raise ArgumentError, "Need to pass an operand block" unless block_given?
       self.class.zeros([self.size, other.size]).tap do |ret|
@@ -258,7 +258,7 @@ module MachineLearningWorkbench::Monkey
     # Inverses matrix
     # @return [NArray]
     def invert
-      Numo::Linalg.inv self
+      NLinalg.inv self
     end
   end
 
@@ -268,7 +268,7 @@ module MachineLearningWorkbench::Monkey
     def exponential
       raise ArgumentError if ndim > 2
       # special case: one-dimensional matrix: just exponentiate the values
-      return Numo::NMath.exp(self) if (ndim == 1) || shape.include?(1)
+      return NMath.exp(self) if (ndim == 1) || shape.include?(1)
       # at this point we need to validate it is a square matrix
       raise ArgumentError unless shape.reduce(&:==)
 
@@ -281,11 +281,11 @@ module MachineLearningWorkbench::Monkey
       # TODO: this is a simple but outdated method, switch to Pade approximation
       # https://github.com/scipy/scipy/blob/11509c4a98edded6c59423ac44ca1b7f28fba1fd/scipy/sparse/linalg/matfuncs.py#L557
 
-      # e_values, l_e_vectors, r_e_vectors_t = Numo::Linalg.svd self
-      evals, _wi, _vl, r_evecs = Numo::Linalg::Lapack.call(:geev, self, jobvl: false, jobvr: true)
+      # e_values, l_e_vectors, r_e_vectors_t = NLinalg.svd self
+      evals, _wi, _vl, r_evecs = NLinalg::Lapack.call(:geev, self, jobvl: false, jobvr: true)
       r_evecs_t = r_evecs#.transpose
       r_evecs_inv = r_evecs_t.invert
-      evals_exp_dmat = Numo::NMath.exp(evals).diag
+      evals_exp_dmat = NMath.exp(evals).diag
 
       # l_e_vectors.dot(e_vals_exp_dmat).dot(l_e_vectors.invert)#.transpose
       r_evecs_t.dot(evals_exp_dmat).dot(r_evecs_inv)

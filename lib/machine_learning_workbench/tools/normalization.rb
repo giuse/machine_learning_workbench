@@ -4,7 +4,10 @@ module MachineLearningWorkbench::Tools
       from ||= narr.minmax
       old_min, old_max = from
       new_min, new_max = to
-      (narr-old_min)*(new_max-new_min)/(old_max-old_min)+new_min
+      ( (narr-old_min)*(new_max-new_min)/(old_max-old_min) ) + new_min
+    rescue ZeroDivisionError
+      # require 'pry'; binding.pry
+      raise ArgumentError, "If you get here, chances are there's a bug in `from` or `to`"
     end
 
     # @param per_column [bool] wheather to compute stats per-column or matrix-wise

@@ -28,7 +28,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def train picks: sorted_inds
       g_mu = utils.dot(picks)
       # g_sigma = utils.dot(picks.row_norms**2 - ndims).first # back to scalar
-      row_norms = Numo::Linalg.norm picks, 2, axis:1
+      row_norms = NLinalg.norm picks, 2, axis:1
       g_sigma = utils.dot(row_norms**2 - ndims)[0] # back to scalar
       @mu += sigma.dot(g_mu.transpose).transpose * lrate
       @variance *= Math.exp(g_sigma * lrate / 2)
