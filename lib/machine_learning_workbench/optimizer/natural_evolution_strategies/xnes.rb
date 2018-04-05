@@ -24,7 +24,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
         raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}"
       end
       # Works with the log of sigma to avoid continuous decompositions (thanks Sun Yi)
-      @log_sigma = Numo::NMath.log(sigma.diagonal).diag
+      @log_sigma = NMath.log(sigma.diagonal).diag
     end
 
     def train picks: sorted_inds

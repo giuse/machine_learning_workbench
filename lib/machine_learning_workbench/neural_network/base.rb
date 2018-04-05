@@ -166,13 +166,13 @@ module MachineLearningWorkbench::NeuralNetwork
     def sigmoid k=0.5
       # k is steepness:  0<k<1 is flatter, 1<k is flatter
       # flatter makes activation less sensitive, better with large number of inputs
-      -> (x) { 1.0 / (Numo::NMath.exp(-k * x) + 1.0) }
+      -> (x) { 1.0 / (NMath.exp(-k * x) + 1.0) }
     end
 
     # Traditional logistic
     def logistic
       -> (x) do
-        exp = Numo::NMath.exp(x)
+        exp = NMath.exp(x)
         # exp.infinite? ? exp : exp / (1.0 + exp)
         exp / (1.0 + exp)
       end
@@ -181,7 +181,7 @@ module MachineLearningWorkbench::NeuralNetwork
     # LeCun hyperbolic activation
     # @see http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf Section 4.4
     def lecun_hyperbolic
-      -> (x) { 1.7159 * Numo::NMath.tanh(2.0*x/3.0) + 1e-3*x }
+      -> (x) { 1.7159 * NMath.tanh(2.0*x/3.0) + 1e-3*x }
     end
 
     # Rectified Linear Unit (ReLU)

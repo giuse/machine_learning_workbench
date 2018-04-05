@@ -3,7 +3,6 @@
 # followed by a `bundle install`
 require 'machine_learning_workbench'
 # Workbench shorthands
-WB = MachineLearningWorkbench
 XNES = WB::Optimizer::NaturalEvolutionStrategies::XNES
 FFNN = WB::NeuralNetwork::FeedForward
 
@@ -11,7 +10,7 @@ FFNN = WB::NeuralNetwork::FeedForward
 XOR = {[0,0] => 0, [1,0] => 1, [0,1] => 1, [1,1] => 0}
 # A classic [2,2,1] feed-forward network will do: 2 inputs, 2 hidden, 1 output
 # For other uses, make sure you match the first number to the number of inputs, and
-# the last one as the number of outputs; then add as many layers as needed, by 
+# the last one as the number of outputs; then add as many layers as needed, by
 # specifying the size of each. Here we have only one, of size 2.
 # NOTE: If this totals thousands of weights, you may want to switch to SNES or BDNES
 # for speed. In the second case, use the function `nweights_per_layer` when instantiating
