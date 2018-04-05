@@ -1,7 +1,7 @@
 module MachineLearningWorkbench::Compressor
-  # Online Vector Quantization: VQ with per-centroid decaying learning rates.
+  # VQ with per-centroid decaying learning rates.
   # Optimized for online training.
-  class OnlineVectorQuantization < VectorQuantization
+  class DecayingLearningRateVQ < VectorQuantization
 
     attr_reader :lrate_min, :lrate_min_den, :decay_rate
 

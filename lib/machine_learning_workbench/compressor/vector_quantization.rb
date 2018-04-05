@@ -10,7 +10,7 @@ module MachineLearningWorkbench::Compressor
       @rng = Random.new rseed
       @ncentrs = ncentrs
       @dims = Array(dims)
-      check_lrate lrate # hack: so that we can overload it in online_vq
+      check_lrate lrate # hack: so that we can overload it in dlr_vq
       @lrate = lrate
       @simil_type = simil_type || :dot
       @init_centr_vrange ||= vrange
@@ -27,7 +27,7 @@ module MachineLearningWorkbench::Compressor
     end
 
     # Verify lrate to be present and withing unit bounds
-    # As a separate method only so it can be overloaded in `OnlineVectorQuantization`
+    # As a separate method only so it can be overloaded in `DecayingLearningRateVQ`
     def check_lrate lrate
       raise ArgumentError, "Pass a `lrate` between 0 and 1" unless lrate&.between?(0,1)
     end
