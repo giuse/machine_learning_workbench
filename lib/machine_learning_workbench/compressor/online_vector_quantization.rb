@@ -21,8 +21,12 @@ module MachineLearningWorkbench::Compressor
       [1/ntrains[centr_idx], lower_bound].max
     end
 
-    def train_one *args, **kwargs
-      raise NotImplementedError, "Remember to overload this using the new lrate(idx)"
+    # Train on one vector
+    # @return [Integer] index of trained centroid
+    def train_one vec
+      trg_idx, _simil = most_similar_centr(vec)
+      centrs[trg_idx] = centrs[trg_idx] * (1-lrate(trg_idx)) + vec * lrate(trg_idx)
+      trg_idx
     end
 
   end
