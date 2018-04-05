@@ -157,7 +157,7 @@ module MachineLearningWorkbench::NeuralNetwork
     # Extract and convert the output layer's activation
     # @return [NArray] the activation of the output layer
     def out
-      state.last
+      state.last.flatten
     end
 
     ## Activation functions
