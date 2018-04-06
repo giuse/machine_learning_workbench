@@ -35,7 +35,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     # Box-Muller transform: generates standard (unit) normal distribution samples
     # @return [Float] a single sample from a standard normal distribution
-    # @note Xumo::NArray implements this :) glad to have switched!
+    # @note Xumo::NArray implements this but no random seed selection yet
     def standard_normal_sample
       rho = Math.sqrt(-2.0 * Math.log(rng.rand))
       theta = 2 * Math::PI * rng.rand
@@ -80,7 +80,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # Samples a standard normal distribution to construct a NArray of
     #   popsize multivariate samples of length ndims
     # @return [NArray] standard normal samples
-    # @note Xumo::NArray implements this :) glad to have switched!
+    # @note Xumo::NArray implements this but no random seed selection yet
     def standard_normal_samples
       NArray.zeros([popsize, ndims]).tap do |ret|
         ret.each_with_index { |_,*i| ret[*i] = standard_normal_sample }
@@ -104,8 +104,9 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # matched with individuals sorted by INCREASING fitness. Then reverse order for minimization.
     # @return standard normal samples sorted by the respective individuals' fitnesses
     def sorted_inds
-      # samples = standard_normal_samples # Xumo::NArray implements the Box-Muller :)
-      samples = NArray.new([popsize, ndims]).rand_norm(0,1)
+      # Xumo::NArray implements the Box-Muller, but no random seed (yet)
+      samples = standard_normal_samples
+      # samples = NArray.new([popsize, ndims]).rand_norm(0,1)
       inds = move_inds(samples)
       fits = parallel_fit ? obj_fn.call(inds) : inds.map(&obj_fn)
       # Quick cure for NaN fitnesses
