@@ -2,17 +2,20 @@ module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
   class VectorQuantization
-    attr_reader :ncentrs, :centrs, :dims, :vrange, :init_centr_vrange, :lrate, :simil_type, :rng, :ntrains
-    Verification = MachineLearningWorkbench::Tools::Verification
+    attr_reader :ncentrs, :centrs, :dims, :vrange, :init_centr_vrange, :lrate,
+      :simil_type, :encoding_type, :rng, :ntrains, :utility, :ncodes
+    attr_writer :utility, :ncodes # allows access from outside
 
-    def initialize ncentrs:, dims:, vrange:, lrate:, simil_type: nil, init_centr_vrange: nil, rseed: Random.new_seed
-      # TODO: RNG CURRENTLY NOT USED!!
-      @rng = Random.new rseed
+    def initialize ncentrs:, dims:, vrange:, lrate:, simil_type: nil, encoding_type: nil, init_centr_vrange: nil, rseed: Random.new_seed
+
+      @rng = Random.new rseed # TODO: RNG CURRENTLY NOT USED!!
+
       @ncentrs = ncentrs
       @dims = Array(dims)
       check_lrate lrate # hack: so that we can overload it in dlr_vq
       @lrate = lrate
       @simil_type = simil_type || :dot
+      @encoding_type = encoding_type || :ensemble_norm
       @init_centr_vrange ||= vrange
       @vrange = case vrange
         when Array
@@ -24,6 +27,8 @@ module MachineLearningWorkbench::Compressor
       end
       init_centrs
       @ntrains = [0]*ncentrs # useful to understand what happens
+      @utility = NArray.zeros [ncentrs] # trace how 'useful' are centroids to encodings
+      @ncodes = 0
     end
 
     # Verify lrate to be present and withing unit bounds
@@ -57,30 +62,45 @@ module MachineLearningWorkbench::Compressor
     # Computes similarities between vector and all centroids
     def similarities vec, type: simil_type
       raise NotImplementedError if vec.shape.size > 1
-      centrs.map { |centr| SIMIL[type].call centr, vec }
+      simil_fn = SIMIL[type] || raise(ArgumentError, "Unrecognized simil #{type}")
+      NArray[*centrs.map { |centr| simil_fn.call centr, vec }]
       # require 'parallel'
-      # Parallel.map(centrs) { |c| c.dot(vec).first }
+      # NArray[*Parallel.map(centrs) { |c| c.dot(vec).first }]
     end
 
     # Encode a vector
-    # TODO: optimize for Numo
-    def encode vec, type: :most_similar
+    # tracks utility of centroids based on how much they contribute to encoding
+    # TODO: `encode = Encodings.const_get(type)` in initialize`
+    # NOTE: hashes of lambdas or modules cannot access ncodes and utility
+    def encode vec, type: encoding_type
       simils = similarities vec
       case type
       when :most_similar
-        simils.index simils.max
+        code = simils.max_index
+        @ncodes += 1
+        @utility[code] += 1
+        code
       when :ensemble
-        simils
+        code = simils
+        tot = simils.sum
+        tot = 1 if tot < 1e-5  # HACK: avoid division by zero
+        contrib = code / tot
+        @ncodes += 1
+        @utility += (contrib - utility) / ncodes # cumulative moving average
+        code
       when :ensemble_norm
-        tot = simils.reduce(:+)
-        tot = 1 if tot == 0  # HACK: avoid division by zero
-        simils.map { |s| s/tot }
-      else raise ArgumentError, "unrecognized encode type: #{type}"
+        tot = simils.sum
+        tot = 1 if tot < 1e-5  # HACK: avoid division by zero
+        code = simils / tot
+        @ncodes += 1
+        @utility += (code - utility) / ncodes # cumulative moving average
+        code
+      else raise ArgumentError, "Unrecognized encode #{type}"
       end
     end
 
     # Reconstruct vector from its code (encoding)
-    def reconstruction code, type: :most_similar
+    def reconstruction code, type: encoding_type
       case type
       when :most_similar
         centrs[code]
@@ -98,14 +118,13 @@ module MachineLearningWorkbench::Compressor
     #   followed by the corresponding similarity
     def most_similar_centr vec
       simils = similarities vec
-      max_simil = simils.max
-      max_idx = simils.index max_simil
-      [max_idx, max_simil]
+      max_idx = simils.max_index
+      [max_idx, simils[max_idx]]
     end
 
     # Per-pixel errors in reconstructing vector
     # @return [NArray] residuals
-    def reconstr_error vec, code: nil, type: :most_similar
+    def reconstr_error vec, code: nil, type: encoding_type
       code ||= encode vec, type: type
       (vec - reconstruction(code, type: type)).abs.sum
     end
