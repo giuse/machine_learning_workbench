@@ -16,6 +16,9 @@ module MachineLearningWorkbench::Compressor
       @next_train = 0 # pointer to the next centroid to train
     end
 
+    def ntrains; @ntrains[0...-1]; end
+    def ntrains_skip; @ntrains.last; end
+
     # Overloading lrate check from original VQ
     def check_lrate lrate; nil; end
 
@@ -28,10 +31,13 @@ module MachineLearningWorkbench::Compressor
       mses = centrs.map do |centr|
         ((centr-vec)**2).sum / centr.size
       end
-      return -1 if mses.min < eps
+      # BEWARE: I am currently not handling the case where we run out of centroids!
+      # => Will be addressed directly by dynamic dictionary size
+      # return -1 if mses.min < eps
+      return -1 if mses.min < eps || next_train == ncentrs
       trg_idx = next_train
       @next_train += 1
-      require 'pry'; binding.pry if next_train == ncentrs
+      # require 'pry'; binding.pry if next_train == ncentrs
       puts "Overwriting centr #{next_train}"
       centrs[trg_idx] = vec
       trg_idx
