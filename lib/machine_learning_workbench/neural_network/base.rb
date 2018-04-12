@@ -162,31 +162,23 @@ module MachineLearningWorkbench::NeuralNetwork
 
     ## Activation functions
 
-    # Traditional sigmoid with variable steepness
+    # Traditional sigmoid (logistic) with variable steepness
     def sigmoid k=0.5
       # k is steepness:  0<k<1 is flatter, 1<k is flatter
       # flatter makes activation less sensitive, better with large number of inputs
-      -> (x) { 1.0 / (NMath.exp(-k * x) + 1.0) }
+      -> (vec) { 1.0 / (NMath.exp(-k * vec) + 1.0) }
     end
-
-    # Traditional logistic
-    def logistic
-      -> (x) do
-        exp = NMath.exp(x)
-        # exp.infinite? ? exp : exp / (1.0 + exp)
-        exp / (1.0 + exp)
-      end
-    end
+    alias logistic sigmoid
 
     # LeCun hyperbolic activation
     # @see http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf Section 4.4
     def lecun_hyperbolic
-      -> (x) { 1.7159 * NMath.tanh(2.0*x/3.0) + 1e-3*x }
+      -> (vec) { 1.7159 * NMath.tanh(2.0*vec/3.0) + 1e-3*vec }
     end
 
     # Rectified Linear Unit (ReLU)
     def relu
-      -> (x) { (x>0).all? && x || x.class.zeros(x.shape) }
+      -> (vec) { (vec>0).all? && vec || vec.class.zeros(vec.shape) }
     end
 
 
