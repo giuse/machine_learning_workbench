@@ -163,7 +163,7 @@ module MachineLearningWorkbench::NeuralNetwork
     ## Activation functions
 
     # Traditional sigmoid (logistic) with variable steepness
-    def sigmoid k=0.5
+    def sigmoid k=1
       # k is steepness:  0<k<1 is flatter, 1<k is flatter
       # flatter makes activation less sensitive, better with large number of inputs
       -> (vec) { 1.0 / (NMath.exp(-k * vec) + 1.0) }
