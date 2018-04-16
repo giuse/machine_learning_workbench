@@ -20,11 +20,15 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     #   a single instance.
     # @param rescale_popsize [Float] scaling for the default population size
     # @param rescale_lrate [Float] scaling for the default learning rate
-    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1
-      raise ArgumentError unless [:min, :max].include? opt_type
-      raise ArgumentError unless obj_fn.respond_to? :call
+    def initialize ndims, obj_fn, opt_type, rseed: nil, mu_init: 0, sigma_init: 1, parallel_fit: false, rescale_popsize: 1, rescale_lrate: 1, utilities: nil, popsize: nil, lrate: nil
+      raise ArgumentError, "opt_type: #{opt_type}" unless [:min, :max].include? opt_type
+      raise ArgumentError, "obj_fn not callable: #{obj_fn}" unless obj_fn.respond_to? :call
+      raise ArgumentError, "utilities only if popsize" if utilities && popsize.nil?
+      raise ArgumentError, "wrong sizes" if utilities && utilities.size != popsize
+      raise ArgumentError, "minimum popsize 5 for default utilities" if popsize&.<(5) && utilities.nil?
       @ndims, @opt_type, @obj_fn, @parallel_fit = ndims, opt_type, obj_fn, parallel_fit
-      @rescale_popsize, @rescale_lrate = rescale_popsize, rescale_lrate
+      @rescale_popsize, @rescale_lrate = rescale_popsize, rescale_lrate # rescale defaults
+      @utilities, @popsize, @lrate = utilities, popsize, lrate # if not set, defaults below
       @eye = NArray.eye(ndims)
       rseed ||= Random.new_seed
       # puts "NES rseed: #{s}"  # currently disabled
@@ -45,10 +49,11 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     end
 
     # Memoized automatic magic numbers
+    # Initialization options allow to rescale or entirely override these.
     # NOTE: Doubling popsize and halving lrate often helps
     def utils;   @utilities ||= cmaes_utilities end
     # (see #utils)
-    def popsize; @popsize   ||= cmaes_popsize * rescale_popsize end
+    def popsize; @popsize   ||= Integer(cmaes_popsize * rescale_popsize) end
     # (see #utils)
     def lrate;   @lrate     ||= cmaes_lrate * rescale_lrate end
 
@@ -57,6 +62,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     def cmaes_utilities
       # Algorithm equations are meant for fitness maximization
       # Match utilities with individuals sorted by INCREASING fitness
+      raise ArgumentError, "Minimum `popsize` should be 5 (is #{popsize})" if popsize < 5
       log_range = (1..popsize).collect do |v|
         [0, Math.log(popsize.to_f/2 - 1) - Math.log(v)].max
       end

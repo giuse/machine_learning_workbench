@@ -17,7 +17,7 @@ module MachineLearningWorkbench::Compressor
       check_lrate lrate # hack: so that we can overload it in dlr_vq
       @lrate = lrate
       @simil_type = simil_type || :dot
-      @encoding_type = encoding_type || :ensemble_norm
+      @encoding_type = encoding_type || :norm_ensemble
       @init_centr_vrange ||= vrange
       @vrange = case vrange
         when Array
@@ -90,10 +90,17 @@ module MachineLearningWorkbench::Compressor
         @ncodes += 1
         @utility += (contrib - utility) / ncodes # cumulative moving average
         code
-      when :ensemble_norm
+      when :norm_ensemble
         tot = simils.sum
         tot = 1 if tot < 1e-5  # HACK: avoid division by zero
         code = simils / tot
+        @ncodes += 1
+        @utility += (code - utility) / ncodes # cumulative moving average
+        code
+      when :sparse_coding
+        raise NotImplementedError, "do this next"
+
+
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
@@ -109,8 +116,10 @@ module MachineLearningWorkbench::Compressor
       when :ensemble
         tot = code.reduce :+
         centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
-      when :ensemble_norm
+      when :norm_ensemble
         centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
+      when :sparse_coding
+        raise NotImplementedError, "do this next"
       else raise ArgumentError, "unrecognized reconstruction type: #{type}"
       end
     end
