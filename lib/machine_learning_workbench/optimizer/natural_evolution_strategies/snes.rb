@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Separable Natural Evolution Strategies

@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+# Run as: `bundle exec ruby examples/image_compression.rb`
+
 require 'rmagick'
 require 'machine_learning_workbench'
 VectorQuantization = MachineLearningWorkbench::Compressor::VectorQuantization

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # evaluate in temporary (empty) folder
 module UsesTemporaryFolders
   def self.included example_group

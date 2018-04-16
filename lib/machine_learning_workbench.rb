@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 gpu = false             # prepare for switching to GPUs
 if gpu

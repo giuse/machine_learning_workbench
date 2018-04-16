@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Compressor
   # VQ with per-centroid decaying learning rates.
   # Optimized for online training.

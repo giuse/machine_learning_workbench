@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 RSpec.describe MachineLearningWorkbench::Compressor::VectorQuantization do
   VectorQuantization = MachineLearningWorkbench::Compressor::VectorQuantization

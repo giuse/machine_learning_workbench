@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe MachineLearningWorkbench::Monkey do
 
   describe Numeric do

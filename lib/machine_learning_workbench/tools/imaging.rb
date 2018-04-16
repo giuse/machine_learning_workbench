@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Tools
   module Imaging
     Forkable = MachineLearningWorkbench::Tools::Execution
