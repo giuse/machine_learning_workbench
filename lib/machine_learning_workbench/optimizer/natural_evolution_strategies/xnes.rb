@@ -12,17 +12,23 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
           NArray[mu_init]
         when Numeric
           NArray.new([1,ndims]).fill mu_init
+        when NArray
+          raise ArgumentError unless mu_init.size == ndims
+          mu_init.ndim < 2 ? mu_init.reshape(1, ndims) : mu_init
         else
           raise ArgumentError, "Something is wrong with mu_init: #{mu_init}"
       end
       @sigma = case sigma_init
-      when Array
-        raise ArgumentError unless sigma_init.size == ndims
-        NArray[*sigma_init].diag
-      when Numeric
-        NArray.new([ndims]).fill(sigma_init).diag
-      else
-        raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}"
+        when Array
+          raise ArgumentError unless sigma_init.size == ndims
+          NArray[*sigma_init].diag
+        when Numeric
+          NArray.new([ndims]).fill(sigma_init).diag
+        when NArray
+          raise ArgumentError unless sigma_init.size == ndims**2
+          sigma_init.ndim < 2 ? sigma_init.reshape(ndims, ndims) : sigma_init
+        else
+          raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}"
       end
       # Works with the log of sigma to avoid continuous decompositions (thanks Sun Yi)
       @log_sigma = NMath.log(sigma.diagonal).diag
