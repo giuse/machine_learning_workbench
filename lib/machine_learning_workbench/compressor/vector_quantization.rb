@@ -159,7 +159,7 @@ module MachineLearningWorkbench::Compressor
       vec_lst.each_with_index do |vec, i|
         trained_idx = train_one vec
         print '.' if debug
-        @ntrains[trained_idx] += 1
+        @ntrains[trained_idx] += 1 if @ntrains
       end
     end
   end
