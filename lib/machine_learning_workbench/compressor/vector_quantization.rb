@@ -82,6 +82,12 @@ module MachineLearningWorkbench::Compressor
         @ncodes += 1
         @utility[code] += 1
         code
+      when :most_similar_ary
+        code = simils.new_zeros
+        code[simils.max_index] = 1
+        @ncodes += 1
+        @utility += code
+        code
       when :ensemble
         code = simils
         tot = simils.sum
@@ -113,6 +119,8 @@ module MachineLearningWorkbench::Compressor
       case type
       when :most_similar
         centrs[code]
+      when :most_similar_ary
+        centrs[code.eq(1).where[0]]
       when :ensemble
         tot = code.reduce :+
         centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
