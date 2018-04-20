@@ -57,7 +57,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     # (see #utils)
     def lrate;   @lrate     ||= cmaes_lrate * rescale_lrate end
 
-    # Magic numbers from CMA-ES (TODO: add proper citation)
+    # Magic numbers from CMA-ES (see `README` for citation)
     # @return [NArray] scale-invariant utilities
     def cmaes_utilities
       # Algorithm equations are meant for fitness maximization

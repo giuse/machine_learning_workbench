@@ -31,11 +31,13 @@ module MachineLearningWorkbench::Compressor
       mses = centrs.map do |centr|
         ((centr-vec)**2).sum / centr.size # uhm get rid of division maybe? squares?
       end
+      min_mse = mses.min
       # skip training if the centr with smallest mse (most similar) has less than eps error (equal)
       # TODO: maintain an average somewhere, make eps dynamic
-      return if mses.min < eps
-      puts "Creating centr #{ncentrs}"
+      return if min_mse < eps
+      puts "Creating centr #{ncentrs} (min_mse: #{min_mse})"
       centrs << vec
+      @utility = @utility.concatenate 0
       @ncentrs.tap{ @ncentrs += 1}
     end
 
