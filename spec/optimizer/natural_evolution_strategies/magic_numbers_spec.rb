@@ -1,4 +1,4 @@
-
+# frozen_string_literal: true
 
 RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies do
   describe "magic numbers" do

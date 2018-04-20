@@ -1,11 +1,13 @@
+# frozen_string_literal: true
 
 module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
   # Block-Diagonal Natural Evolution Strategies
   class BDNES < Base
 
-    MAX_RSEED = 10**Random.new_seed.size # same range as Random.new_seed
+    MAX_RSEED = 10**Random.new_seed.size # block random seeds to be on the same range as `Random.new_seed`
 
-    attr_reader :ndims_lst, :blocks, :popsize
+    attr_reader :ndims_lst, :blocks, :popsize, :parallel_update
+    undef :ndims # only `ndims_lst` here
 
     # Initialize a list of XNES, one for each block
     # see class `Base` for the description of the rest of the arguments.
@@ -13,7 +15,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
     #    matrix. Note: entire (reconstructed) individuals will be passed to the `obj_fn`
     #    regardless of the division here described.
     # @param init_opts [Hash] the rest of the options will be passed directly to XNES
-    def initialize ndims_lst, obj_fn, opt_type, parallel_fit: false, rseed: nil, **init_opts
+    # @parellel_update [bool] whether to parallelize block updates
+    def initialize ndims_lst, obj_fn, opt_type, parallel_fit: false, rseed: nil, parallel_update: false, **init_opts
       # mu_init: 0, sigma_init: 1
       # init_opts = {rseed: rseed, mu_init: mu_init, sigma_init: sigma_init}
       # TODO: accept list of `mu_init`s and `sigma_init`s
@@ -21,9 +24,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       block_fit = -> (*args) { raise "Should never be called" }
       # the BD-NES seed should ensure deterministic reproducibility
       # but each block should have a different seed
-      rseed ||= Random.new_seed
       # puts "BD-NES rseed: #{s}"  # currently disabled
-      @rng = Random.new rseed
+      @rng = Random.new rseed || Random.new_seed
       @blocks = ndims_lst.map do |ndims|
         b_rseed = rng.rand MAX_RSEED
         XNES.new ndims, block_fit, opt_type, rseed: b_rseed, **init_opts
@@ -34,6 +36,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
       @best = [(opt_type==:max ? -1 : 1) * Float::INFINITY, nil]
       @last_fits = []
+      @parallel_update = parallel_update
+      require 'parallel' if parallel_update
     end
 
     def sorted_inds_lst
@@ -82,14 +86,31 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     # duck-type the interface: [:train, :mu, :convergence, :save, :load]
 
+    # TODO: refactor DRY
     def train picks: sorted_inds_lst
-      blocks.zip(sorted_inds_lst).each do |xnes, s_inds|
-        xnes.train picks: s_inds
+      if parallel_update
+        # Parallel.each(blocks.zip(picks)) do |xnes, s_inds|
+        #   xnes.train picks: s_inds
+        # end
+        # Actually it's not this simple.
+        # Forks do not act on the parent, so I need to send back updated mu and sigma
+        # Luckily we have `NES#save` and `NES#load` at the ready
+        # Next: need to implement `#marshal_dump` and `#marshal_load` in `Base`
+        # Actually using `Cumo` rather than `Parallel` may avoid marshaling altogether
+        raise NotImplementedError, "Should dump and load each instance"
+      else
+        blocks.zip(picks).each do |xnes, s_inds|
+          xnes.train picks: s_inds
+        end
       end
     end
 
     def mu
       blocks.map(&:mu).reduce { |mem, var| mem.concatenate var, axis: 1 }
+    end
+
+    def sigma
+      raise NotImplementedError, "need to write a concatenation like for mu here"
     end
 
     def convergence

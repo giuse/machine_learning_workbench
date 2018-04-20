@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 RSpec.describe MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies do
   NES = MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies

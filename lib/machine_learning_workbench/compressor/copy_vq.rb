@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Compressor
   # Train-less VQ, copying new images into centroids
   # Optimized for online training.

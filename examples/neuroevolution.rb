@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+# Run as: `bundle exec ruby examples/neuroevolution.rb`
+
 # Make sure the gem is installed first with `gem install machine_learning_workbench`
 # Alternatively, add `gem 'machine_learning_workbench'` to your Gemfile if using Bundle,
 # followed by a `bundle install`

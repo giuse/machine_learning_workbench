@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bundler/setup"
 require "machine_learning_workbench"
 require_relative 'helpers/uses_temporary_folders'

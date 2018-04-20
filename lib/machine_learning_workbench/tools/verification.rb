@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Tools
   module Verification
     # TODO: switch to NArray

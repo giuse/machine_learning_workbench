@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
@@ -15,7 +17,7 @@ module MachineLearningWorkbench::Compressor
       check_lrate lrate # hack: so that we can overload it in dlr_vq
       @lrate = lrate
       @simil_type = simil_type || :dot
-      @encoding_type = encoding_type || :ensemble_norm
+      @encoding_type = encoding_type || :norm_ensemble
       @init_centr_vrange ||= vrange
       @vrange = case vrange
         when Array
@@ -80,6 +82,12 @@ module MachineLearningWorkbench::Compressor
         @ncodes += 1
         @utility[code] += 1
         code
+      when :most_similar_ary
+        code = simils.new_zeros
+        code[simils.max_index] = 1
+        @ncodes += 1
+        @utility += code
+        code
       when :ensemble
         code = simils
         tot = simils.sum
@@ -88,10 +96,17 @@ module MachineLearningWorkbench::Compressor
         @ncodes += 1
         @utility += (contrib - utility) / ncodes # cumulative moving average
         code
-      when :ensemble_norm
+      when :norm_ensemble
         tot = simils.sum
         tot = 1 if tot < 1e-5  # HACK: avoid division by zero
         code = simils / tot
+        @ncodes += 1
+        @utility += (code - utility) / ncodes # cumulative moving average
+        code
+      when :sparse_coding
+        raise NotImplementedError, "do this next"
+
+
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
@@ -104,11 +119,15 @@ module MachineLearningWorkbench::Compressor
       case type
       when :most_similar
         centrs[code]
+      when :most_similar_ary
+        centrs[code.eq(1).where[0]]
       when :ensemble
         tot = code.reduce :+
         centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
-      when :ensemble_norm
+      when :norm_ensemble
         centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
+      when :sparse_coding
+        raise NotImplementedError, "do this next"
       else raise ArgumentError, "unrecognized reconstruction type: #{type}"
       end
     end
@@ -148,7 +167,7 @@ module MachineLearningWorkbench::Compressor
       vec_lst.each_with_index do |vec, i|
         trained_idx = train_one vec
         print '.' if debug
-        @ntrains[trained_idx] += 1
+        @ntrains[trained_idx] += 1 if @ntrains
       end
     end
   end

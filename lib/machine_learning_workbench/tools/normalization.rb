@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MachineLearningWorkbench::Tools
   module Normalization
     def self.feature_scaling narr, from: nil, to: [0,1]

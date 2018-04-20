@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 module MachineLearningWorkbench::NeuralNetwork
   # Neural Network base class
@@ -26,10 +27,10 @@ module MachineLearningWorkbench::NeuralNetwork
 
     # @param struct [Array<Integer>] list of layer sizes
     # @param act_fn [Symbol] choice of activation function for the neurons
-    def initialize struct, act_fn: nil
+    def initialize struct, act_fn: nil, **act_fn_args
       @struct = struct
       @act_fn_name = act_fn || :sigmoid
-      @act_fn = send(act_fn_name)
+      @act_fn = send act_fn_name, **act_fn_args
       # @state holds both inputs, possibly recurrency, and bias
       # it is a complete input for the next layer, hence size from layer sizes
       @state = layer_row_sizes.collect do |size|
@@ -163,10 +164,10 @@ module MachineLearningWorkbench::NeuralNetwork
     ## Activation functions
 
     # Traditional sigmoid (logistic) with variable steepness
-    def sigmoid k=1
-      # k is steepness:  0<k<1 is flatter, 1<k is flatter
+    def sigmoid steepness: 1
+      # steepness:  0<s<1 is flatter, 1<s is flatter
       # flatter makes activation less sensitive, better with large number of inputs
-      -> (vec) { 1.0 / (NMath.exp(-k * vec) + 1.0) }
+      -> (vec) { 1.0 / (NMath.exp(-steepness * vec) + 1.0) }
     end
     alias logistic sigmoid
 
