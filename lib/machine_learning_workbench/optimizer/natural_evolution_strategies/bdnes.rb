@@ -109,6 +109,10 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       blocks.map(&:mu).reduce { |mem, var| mem.concatenate var, axis: 1 }
     end
 
+    def sigma
+      raise NotImplementedError, "need to write a concatenation like for mu here"
+    end
+
     def convergence
       blocks.map(&:convergence).reduce(:+)
     end
