@@ -53,6 +53,7 @@ module MachineLearningWorkbench::NeuralNetwork
     # Initialize the network with random weights
     def init_random
       # Reusing `#load_weights` instead helps catching bugs
+      deep_reset
       load_weights NArray.new(nweights).rand(-1,1)
     end
 

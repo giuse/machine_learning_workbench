@@ -24,9 +24,10 @@ module MachineLearningWorkbench::Tools
     end
 
     def self.restore_streams
-      $stdout.close
+      logger = $stdout
       $stdout = STDOUT
       $stderr = STDERR
+      logger.close
     end
   end
 end
