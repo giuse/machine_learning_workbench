@@ -11,12 +11,13 @@ module MachineLearningWorkbench::Compressor
 
     def initialize **opts
       puts "Ignoring learning rate: `lrate: #{opts[:lrate]}`" if opts[:lrate]
-      puts "Ignoring similarity: `simil_type: #{opts[:simil_type]}`" if opts[:simil_type]
+      puts "Ignoring similarity: `simil_type: #{opts[:simil_type]}`" unless opts[:simil_type] == :dot
       puts "Ignoring ncentrs: `ncentrs: #{opts[:ncentrs]}`" if opts[:ncentrs]
       # TODO: try different epsilons to reduce the number of states
       # for example, in qbert we care what is lit and what is not, not the colors
       @equal_simil = opts.delete(:equal_simil) || 0.0
-      super **opts.merge({ncentrs: 1, lrate: nil, simil_type: nil})
+      super **opts.merge({ncentrs: 1, lrate: nil, simil_type: :dot})
+
       @ntrains = nil # will disable the counting
     end
 
@@ -28,17 +29,23 @@ module MachineLearningWorkbench::Compressor
     # - create new centroid from the image
     # @return [Integer] index of new centroid
     def train_one vec, eps: equal_simil
-      mses = centrs.map do |centr|
-        ((centr-vec)**2).sum / centr.size # uhm get rid of division maybe? squares?
-      end
-      min_mse = mses.min
-      # skip training if the centr with smallest mse (most similar) has less than eps error (equal)
-      # TODO: maintain an average somewhere, make eps dynamic
-      return if min_mse < eps
-      puts "Creating centr #{ncentrs} (min_mse: #{min_mse})"
-      centrs << vec
-      @utility = @utility.concatenate 0
-      @ncentrs.tap{ @ncentrs += 1}
+      # NOTE:  novelty needs to be re-computed for each image, as after each
+      # training the novelty signal changes!
+
+# NOTE the reconstruction error here depends once more on the _color_
+# this is wrong and should be taken out of the equation
+# NOTE: this is fixed if I use the differences sparse coding method
+      residual_img = reconstr_error(vec)
+      rec_err = residual_img.mean
+      return -1 if rec_err < eps
+      puts "Creating centr #{ncentrs} (rec_err: #{rec_err})"
+      # norm_vec = vec / NLinalg.norm(vec)
+      # @centrs = centrs.concatenate norm_vec
+      # @centrs = centrs.concatenate vec
+      @centrs = centrs.concatenate residual_img
+      # HACK: make it more general by using `code_size`
+      @utility = @utility.concatenate [0] * (encoding_type == :sparse_coding_v1 ? 2 : 1)
+      ncentrs
     end
 
   end

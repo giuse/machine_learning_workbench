@@ -7,6 +7,11 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
 
     def initialize_distribution mu_init: 0, sigma_init: 1
       @mu = case mu_init
+        when Range # initialize with random in range
+          raise ArgumentError, "mu_init: `Range` start/end in `Float`s" \
+            unless mu_init.first.kind_of?(Float) && mu_init.last.kind_of?(Float)
+          mu_rng = Random.new rng.rand 10**Random.new_seed.size
+          NArray[*ndims.times.map { mu_rng.rand mu_init }]
         when Array
           raise ArgumentError unless mu_init.size == ndims
           NArray[mu_init]

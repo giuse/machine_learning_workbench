@@ -23,7 +23,8 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       when Numeric
         NArray.new([ndims]).fill(sigma_init)
       else
-        raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}"
+        raise ArgumentError, "Something is wrong with sigma_init: #{sigma_init}" \
+          "(did you remember to copy the other cases from XNES?)"
       end
       @sigma = @variances.diag
     end
