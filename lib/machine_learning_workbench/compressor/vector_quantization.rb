@@ -119,6 +119,7 @@ module MachineLearningWorkbench::Compressor
         @utility += (code - utility) / ncodes # cumulative moving average
         code
       when :sparse_coding_v1
+        raise "requires centroids normalized to unit length!"
         @encoder = nil if @encoder&.shape&.first != centrs.shape.first
         # Danafar & Cuccu: compact form linear regression encoder
         @encoder ||= (centrs.dot centrs.transpose).invert.dot centrs
@@ -140,11 +141,52 @@ module MachineLearningWorkbench::Compressor
         # should NEVER be put to 0, even if it could contribute alone to 100% of the
         # total
         norm_code.sort_index[0...-1].each do |idx|
+        # NOTE: upon further study I disagree this represent information content unless
+        # the centroids are unit vectors. So I'm commenting this implementation now,
+        # together with the following, until I implement a switch to normalize the
+        # centroids based on configuration.
           sparse_code[idx] = 0
           sum += norm_code[idx]
           break if sum >= thold # we know the code's total is normalized to 1 and has no negatives
         end
         code = sparse_code / sparse_code.sum # re-normalize sum to 1
+        @ncodes += 1
+        @utility += (code - utility) / ncodes # cumulative moving average
+        code
+       when :sparse_coding_v2
+        # Cuccu & Danafar: incremental reconstruction encoding
+        # turns out to be closely related to (Orthogonal) Matching Pursuit
+        raise "requires centroids normalized to unit length!"
+        # return centrs.dot vec # speed test for the rest of the system
+        sparse_code = NArray.zeros code_size
+        resid = vec
+        # cap the number of non-zero elements in the code
+        max_nonzero = [1,ncentrs/3].max
+        max_nonzero.times do |i|
+          # OPT: remove msc from centrs at each loop
+          # the algorithm should work even without this opt because
+          # we are working on the residuals each time
+          simils = centrs.dot resid
+          simils.max_index
+          msc = simils.max_index
+          simils_abs = simils.map &:abs
+          msc = simils_abs.index simils_abs.max # most similar centroid
+          max_simil = simils[msc]
+
+          # remember to distinguish here to use the pos/neg features trick
+          sparse_code[msc] = max_simil
+          reconstr = max_simil * centrs[msc, true]
+          resid -= reconstr
+          # puts "resid#{i} #{resid.abs.mean}" # if debug
+          epsilon = 0.005
+          # print resid.abs.mean, ' '
+          # print sparse_code.to_a, ' '
+          break if resid.abs.mean <= epsilon
+        end
+
+        # should normalize sum to 1?
+        code = sparse_code #/ sparse_code.sum # normalize sum to 1
+
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
