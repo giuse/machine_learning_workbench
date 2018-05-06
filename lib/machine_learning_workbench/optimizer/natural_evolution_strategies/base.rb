@@ -132,7 +132,7 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
 
-      samples[sort_idxs,true]
+      samples[sort_idxs, true]
     end
 
     # @!method interface_methods

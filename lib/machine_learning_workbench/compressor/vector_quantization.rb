@@ -4,7 +4,7 @@ module MachineLearningWorkbench::Compressor
 
   # Standard Vector Quantization
   class VectorQuantization
-    attr_reader :ncentrs, :centrs, :dims, :vrange, :init_centr_vrange, :lrate,
+    attr_reader :centrs, :dims, :vrange, :init_centr_vrange, :lrate,
       :simil_type, :encoding_type, :rng, :ntrains, :utility, :ncodes
     attr_writer :utility, :ncodes # allows access from outside
 
@@ -12,12 +12,11 @@ module MachineLearningWorkbench::Compressor
 
       @rng = Random.new rseed # TODO: RNG CURRENTLY NOT USED!!
 
-      @ncentrs = ncentrs
       @dims = Array(dims)
       check_lrate lrate # hack: so that we can overload it in dlr_vq
       @lrate = lrate
-      @simil_type = simil_type || :dot
-      @encoding_type = encoding_type || :norm_ensemble
+      @simil_type = simil_type || raise("missing simil_type")
+      @encoding_type = encoding_type || raise("missing encoding_type")
       @init_centr_vrange ||= vrange
       @vrange = case vrange
         when Array
@@ -27,10 +26,19 @@ module MachineLearningWorkbench::Compressor
           [vrange.first, vrange.last].map &method(:Float)
         else raise ArgumentError, "vrange: unrecognized type: #{vrange.class}"
       end
-      init_centrs
-      @ntrains = [0]*ncentrs # useful to understand what happens
-      @utility = NArray.zeros [ncentrs] # trace how 'useful' are centroids to encodings
+      init_centrs nc: ncentrs
+      @ntrains = [0]*ncentrs              # per-centroid number of trainings
+      @utility = NArray.zeros [code_size] # trace how 'useful' are centroids to encodings
       @ncodes = 0
+    end
+
+    def ncentrs
+      @centrs.shape.first
+    end
+
+    # HACKKETY HACKKETY HACK (can't wait to refactor after the deadline)
+    def code_size
+      encoding_type == :sparse_coding_v1 ? 2*ncentrs : ncentrs
     end
 
     # Verify lrate to be present and withing unit bounds
@@ -41,7 +49,7 @@ module MachineLearningWorkbench::Compressor
 
     # Initializes a list of centroids
     def init_centrs nc: ncentrs, base: nil, proport: nil
-      @centrs = nc.times.map { new_centr base, proport }
+      @centrs = nc.times.map { new_centr base, proport }.to_na
     end
 
     # Creates a new (random) centroid
@@ -64,7 +72,10 @@ module MachineLearningWorkbench::Compressor
     # Computes similarities between vector and all centroids
     def similarities vec, type: simil_type
       raise NotImplementedError if vec.shape.size > 1
-      NArray[*centrs.map { |centr| simil_fn.call centr, vec }]
+      raise "need to check since centrs is a NArray now" if type == :mse
+      # simil_fn = SIMIL[type] || raise(ArgumentError, "Unrecognized simil #{type}")
+      # centrs.map { |centr| simil_fn.call centr, vec }
+      centrs.dot vec
     end
 
     # Encode a vector
@@ -115,14 +126,16 @@ module MachineLearningWorkbench::Compressor
     def reconstruction code, type: encoding_type
       case type
       when :most_similar
-        centrs[code]
+        centrs[code, true]
       when :most_similar_ary
-        centrs[code.eq(1).where[0]]
+        centrs[code.eq(1), true]
       when :ensemble
-        tot = code.reduce :+
-        centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
+        # tot = code.reduce :+
+        # centrs.zip(code).map { |centr, contr| centr*contr/tot }.reduce :+
+        centrs.dot(code) / code.sum
       when :norm_ensemble
-        centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
+        centrs.dot code
+        # centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
       when :sparse_coding
         raise NotImplementedError, "do this next"
       else raise ArgumentError, "unrecognized reconstruction type: #{type}"
@@ -151,7 +164,7 @@ module MachineLearningWorkbench::Compressor
       trg_idx, _simil = most_similar_centr(vec)
       # note: uhm that actually looks like a dot product... maybe faster?
       #   `[c[i], vec].dot([1-lrate, lrate])`
-      centrs[trg_idx] = centrs[trg_idx] * (1-lrate) + vec * lrate
+      centrs[trg_idx, true] = centrs[trg_idx, true] * (1-lrate) + vec * lrate
       trg_idx
     end
 

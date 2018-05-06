@@ -41,7 +41,7 @@ module MachineLearningWorkbench::Compressor
       @next_train += 1
       # require 'pry'; binding.pry if next_train == ncentrs
       puts "Overwriting centr #{next_train}"
-      centrs[trg_idx] = vec
+      centrs[trg_idx, true] = vec
       trg_idx
     end
 
