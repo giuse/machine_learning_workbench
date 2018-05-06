@@ -125,10 +125,16 @@ module MachineLearningWorkbench::Optimizer::NaturalEvolutionStrategies
       # this_best = sorted.last.take(2)
       # NArray[*sorted.map(&:last)]
 
-      sort_idxs = fits.sort_index
+
+
+      # BUG IN NARRAY SORT!! ruby-numo/numo-narray#97
+      # sort_idxs = fits.sort_index
+      sort_idxs = fits.size.times.sort_by { |i| fits[i] }.to_na
+
+
+
       sort_idxs = sort_idxs.reverse if opt_type == :min
       this_best = [fits[sort_idxs[-1]], inds[sort_idxs[-1], true]]
-
       opt_cmp_fn = opt_type==:min ? :< : :>
       @best = this_best if this_best.first.send(opt_cmp_fn, best.first)
 

@@ -140,17 +140,25 @@ module MachineLearningWorkbench::Compressor
         # NOTE: the last element in the sort below has the highest contribution and
         # should NEVER be put to 0, even if it could contribute alone to 100% of the
         # total
-        norm_code.sort_index[0...-1].each do |idx|
         # NOTE: upon further study I disagree this represent information content unless
         # the centroids are unit vectors. So I'm commenting this implementation now,
         # together with the following, until I implement a switch to normalize the
         # centroids based on configuration.
-        norm_code.sort_index[0...-1].each do |idx|
+
+
+
+        # BUG IN NARRAY SORT!! ruby-numo/numo-narray#97
+        # norm_code.sort_index[0...-1].each do |idx|
+        norm_code.size.times.sort_by { |i| norm_code[i] }[0...-1].each do |idx|
+
+
+
           sparse_code[idx] = 0
           sum += norm_code[idx]
           break if sum >= thold # we know the code's total is normalized to 1 and has no negatives
         end
         code = sparse_code / sparse_code.sum # re-normalize sum to 1
+
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
@@ -168,12 +176,18 @@ module MachineLearningWorkbench::Compressor
           # the algorithm should work even without this opt because
           # we are working on the residuals each time
           simils = centrs.dot resid
-          simils.max_index
-          msc = simils.max_index
+
+
+
+          # BUG IN NARRAY SORT!! ruby-numo/numo-narray#97
+          # msc = simils.max_index
+          simils = simils.to_a
           simils_abs = simils.map &:abs
           msc = simils_abs.index simils_abs.max # most similar centroid
-          max_simil = simils[msc]
 
+
+
+          max_simil = simils[msc]
           # remember to distinguish here to use the pos/neg features trick
           sparse_code[msc] = max_simil
           reconstr = max_simil * centrs[msc, true]
@@ -205,7 +219,14 @@ module MachineLearningWorkbench::Compressor
           diff = (centrs - resid).abs.sum(1)
 
 
-          msc = diff.max_index
+
+          # BUG IN NARRAY SORT!! ruby-numo/numo-narray#97
+          # msc = diff.max_index
+          diff = diff.to_a
+          msc = diff.index diff.min # most similar centroid
+
+
+
           min_diff = diff[msc]
           # remember to distinguish here to use the pos/neg features trick
           sparse_code[msc] = 1
@@ -248,6 +269,13 @@ module MachineLearningWorkbench::Compressor
         reconstr = centrs.transpose.dot reconstr_code
       when :sparse_coding_v2
         raise "requires normalized centroids!"
+
+
+        # BUG IN NARRAY DOT!! ruby-numo/numo-narray#99
+        # reconstr = code.dot centrs
+        reconstr = code.expand_dims(0).dot centrs
+
+
       when :sparse_coding
         # the code is binary, so just sum over the corresponding centroids
         # note: sum, not mean, because of how it's used in reconstr_error
