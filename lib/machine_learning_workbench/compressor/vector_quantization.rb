@@ -164,6 +164,8 @@ module MachineLearningWorkbench::Compressor
       trg_idx, _simil = most_similar_centr(vec)
       # note: uhm that actually looks like a dot product... maybe faster?
       #   `[c[i], vec].dot([1-lrate, lrate])`
+      # norm_vec = vec / NLinalg.norm(vec)
+      # centrs[trg_idx, true] = centrs[trg_idx, true] * (1-lrate) + norm_vec * lrate
       centrs[trg_idx, true] = centrs[trg_idx, true] * (1-lrate) + vec * lrate
       trg_idx
     end
