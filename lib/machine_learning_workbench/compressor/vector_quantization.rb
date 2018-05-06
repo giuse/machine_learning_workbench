@@ -82,21 +82,24 @@ module MachineLearningWorkbench::Compressor
     # tracks utility of centroids based on how much they contribute to encoding
     # TODO: `encode = Encodings.const_get(type)` in initialize`
     # NOTE: hashes of lambdas or modules cannot access ncodes and utility
+    # TODO: refactor anyway through `stats` object, this thing is getting out of hand
     def encode vec, type: encoding_type
-      simils = similarities vec
       case type
       when :most_similar
+        simils = similarities vec
         code = simils.max_index
         @ncodes += 1
         @utility[code] += 1
         code
       when :most_similar_ary
+        simils = similarities vec
         code = simils.new_zeros
         code[simils.max_index] = 1
         @ncodes += 1
         @utility += code
         code
       when :ensemble
+        simils = similarities vec
         code = simils
         tot = simils.sum
         tot = 1 if tot < 1e-5  # HACK: avoid division by zero
@@ -105,9 +108,43 @@ module MachineLearningWorkbench::Compressor
         @utility += (contrib - utility) / ncodes # cumulative moving average
         code
       when :norm_ensemble
+        simils = similarities vec
         tot = simils.sum
+        # NOTE this actually makes a big discontinuity if the total is equal to zero.
+        # Does that even ever happen? I guess only w/ reset img (zeros) as lone centroid.
+        # Which after first gen is really useless and should just be dropped anyway...
         tot = 1 if tot < 1e-5  # HACK: avoid division by zero
         code = simils / tot
+        @ncodes += 1
+        @utility += (code - utility) / ncodes # cumulative moving average
+        code
+      when :sparse_coding_v1
+        @encoder = nil if @encoder&.shape&.first != centrs.shape.first
+        # Danafar & Cuccu: compact form linear regression encoder
+        @encoder ||= (centrs.dot centrs.transpose).invert.dot centrs
+
+        raw_code = @encoder.dot(vec)
+        # separate positive and negative features (NOTE: all features will be positive)
+        # i.e. split[0...n] = max {0, raw[i]}; split[n...2*n] = max {0, -raw[i]}
+        # TODO: cite Coates & Ng
+        # TODO: optimize and remove redundant variables
+        split_code = raw_code.concatenate(-raw_code)
+        split_code[split_code<0] = 0
+        # normalize such that the code sums to 1
+        norm_code = split_code / split_code.sum
+        # Danafar: drop to say 80% of info (à la pca)
+        thold = 0.2
+        sparse_code = norm_code.dup
+        sum = 0
+        # NOTE: the last element in the sort below has the highest contribution and
+        # should NEVER be put to 0, even if it could contribute alone to 100% of the
+        # total
+        norm_code.sort_index[0...-1].each do |idx|
+          sparse_code[idx] = 0
+          sum += norm_code[idx]
+          break if sum >= thold # we know the code's total is normalized to 1 and has no negatives
+        end
+        code = sparse_code / sparse_code.sum # re-normalize sum to 1
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
