@@ -11,12 +11,13 @@ module MachineLearningWorkbench::Compressor
 
     def initialize **opts
       puts "Ignoring learning rate: `lrate: #{opts[:lrate]}`" if opts[:lrate]
-      puts "Ignoring similarity: `simil_type: #{opts[:simil_type]}`" if opts[:simil_type]
+      puts "Ignoring similarity: `simil_type: #{opts[:simil_type]}`" unless opts[:simil_type] == :dot
       puts "Ignoring ncentrs: `ncentrs: #{opts[:ncentrs]}`" if opts[:ncentrs]
       # TODO: try different epsilons to reduce the number of states
       # for example, in qbert we care what is lit and what is not, not the colors
       @equal_simil = opts.delete(:equal_simil) || 0.0
-      super **opts.merge({ncentrs: 1, lrate: nil, simil_type: nil})
+      super **opts.merge({ncentrs: 1, lrate: nil, simil_type: :dot})
+
       @ntrains = nil # will disable the counting
     end
 

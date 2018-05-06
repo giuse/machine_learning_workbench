@@ -29,7 +29,8 @@ module MachineLearningWorkbench::Compressor
 
     # Train on one vector
     # @return [Integer] index of trained centroid
-    def train_one vec
+    def train_one vec, eps: nil
+      # NOTE: ignores epsilon if passed
       trg_idx, _simil = most_similar_centr(vec)
       centrs[trg_idx] = centrs[trg_idx] * (1-lrate(trg_idx)) + vec * lrate(trg_idx)
       trg_idx

@@ -56,18 +56,15 @@ module MachineLearningWorkbench::Compressor
       ret
     end
 
-    SIMIL = {
-      dot: -> (centr, vec) { centr.dot(vec) },
-      mse: -> (centr, vec) { -((centr-vec)**2).sum / centr.size }
-    }
+    # SIMIL = {
+    #   dot: -> (centr, vec) { centr.dot(vec) },
+    #   mse: -> (centr, vec) { -((centr-vec)**2).sum / centr.size }
+    # }
 
     # Computes similarities between vector and all centroids
     def similarities vec, type: simil_type
       raise NotImplementedError if vec.shape.size > 1
-      simil_fn = SIMIL[type] || raise(ArgumentError, "Unrecognized simil #{type}")
       NArray[*centrs.map { |centr| simil_fn.call centr, vec }]
-      # require 'parallel'
-      # NArray[*Parallel.map(centrs) { |c| c.dot(vec).first }]
     end
 
     # Encode a vector
