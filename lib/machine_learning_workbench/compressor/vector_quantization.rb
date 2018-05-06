@@ -145,6 +145,7 @@ module MachineLearningWorkbench::Compressor
         # the centroids are unit vectors. So I'm commenting this implementation now,
         # together with the following, until I implement a switch to normalize the
         # centroids based on configuration.
+        norm_code.sort_index[0...-1].each do |idx|
           sparse_code[idx] = 0
           sum += norm_code[idx]
           break if sum >= thold # we know the code's total is normalized to 1 and has no negatives
@@ -241,8 +242,16 @@ module MachineLearningWorkbench::Compressor
       when :norm_ensemble
         centrs.dot code
         # centrs.zip(code).map { |centr, contr| centr*contr }.reduce :+
+      when :sparse_coding_v1
+        raise "requires normalized centroids!"
+        reconstr_code = code[0...(code.size/2)] - code[(code.size/2)..-1]
+        reconstr = centrs.transpose.dot reconstr_code
+      when :sparse_coding_v2
+        raise "requires normalized centroids!"
       when :sparse_coding
-        raise NotImplementedError, "do this next"
+        # the code is binary, so just sum over the corresponding centroids
+        # note: sum, not mean, because of how it's used in reconstr_error
+        reconstr = centrs[code.cast_to(Numo::Bit).where, true].sum(0)
       else raise ArgumentError, "unrecognized reconstruction type: #{type}"
       end
     end
@@ -260,12 +269,17 @@ module MachineLearningWorkbench::Compressor
     # @return [NArray] residuals
     def reconstr_error vec, code: nil, type: encoding_type
       code ||= encode vec, type: type
-      (vec - reconstruction(code, type: type)).abs.sum
+      resid = vec - reconstruction(code, type: type)
+      # we ignore the extra stuff coming from the centroids,
+      # only care that everything in the obs is represented in centrs
+      resid[resid<0] = 0 if encoding_type == :sparse_coding
+      resid
     end
 
     # Train on one vector
     # @return [Integer] index of trained centroid
-    def train_one vec
+    def train_one vec, eps: nil
+      # NOTE: ignores epsilon if passed
       trg_idx, _simil = most_similar_centr(vec)
       # note: uhm that actually looks like a dot product... maybe faster?
       #   `[c[i], vec].dot([1-lrate, lrate])`
