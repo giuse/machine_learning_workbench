@@ -191,9 +191,35 @@ module MachineLearningWorkbench::Compressor
         @utility += (code - utility) / ncodes # cumulative moving average
         code
       when :sparse_coding
-        raise NotImplementedError, "do this next"
+        # Cuccu: Direct residual encoding
+        # return centrs.dot vec # speed test for the rest of the system
+        sparse_code = NArray.zeros code_size
+        resid = vec
+        # cap the number of non-zero elements in the code
+        max_nonzero = [1,ncentrs/3].max
+        max_nonzero.times do |i|
+          # OPT: remove msc from centrs at each loop
+          # the algorithm should work even without this opt because
+          # we are working on the residuals each time
+          diff = (centrs - resid).abs.sum(1)
 
 
+          msc = diff.max_index
+          min_diff = diff[msc]
+          # remember to distinguish here to use the pos/neg features trick
+          sparse_code[msc] = 1
+          reconstr = centrs[msc, true]
+          resid -= reconstr
+          resid[(resid<0).where] = 0 # ignore artifacts introduced by the centroids in reconstruction
+
+          # puts "resid#{i} #{resid.abs.mean}" # if debug
+          epsilon = 0.005
+          # print resid.abs.mean, ' ' if $ngen == 2; exit if $ngen==3
+          # print sparse_code.to_a, ' ' if $ngen == 3; exit if $ngen==4
+          break if resid.abs.mean <= epsilon
+        end
+
+        code = sparse_code
         @ncodes += 1
         @utility += (code - utility) / ncodes # cumulative moving average
         code
