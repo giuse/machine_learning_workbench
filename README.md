@@ -26,9 +26,9 @@ Or install it yourself as:
 
 TLDR: Check out [the `examples` directory](examples), e.g. [this script](examples/neuroevolution.rb).
 
-This library is thought as a practical workbench: there is plenty of tools hanging, each has multiple uses and applications, and as such it is built as atomic and flexible as possible. Folders [in the lib structure](lib/machine_learning_workbench) categorize them them.
+This library is thought as a practical workbench: there is plenty of tools hanging, each has multiple uses and applications, and as such it is built as atomic and flexible as possible. Folders [in the lib structure](lib/machine_learning_workbench) categorize them.
 
-The [systems directory](lib/machine_learning_workbench/systems) holds few examples of how to bring them together in higher abstractions, i.e. as _compound tools_.
+The [systems directory](lib/machine_learning_workbench/systems) holds a few examples of how to bring them together in higher abstractions, i.e. as _compound tools_.
 For example, a [neuroevolution setup](lib/machine_learning_workbench/systems/neuroevolution.rb) brings together evolutionary computation and neural networks.
 
 For an example of how to build it from scratch, check this [neuroevolution script](examples/neuroevolution.rb). To run it, use `bundle exec ruby examples/neuroevolution.rb`
